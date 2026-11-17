@@ -79,3 +79,9 @@ def decode_image(data: bytes, image_type: MimeType) -> np.ndarray:
     if image is None:
         raise ImageDecodingError("Unable to decode image.")
     return image
+
+
+def get_data_format(filename: str) -> MimeType:
+    """Util function to guess format from filename extension."""
+    extension = filename.split(".")[-1]
+    return MimeType.from_string(extension)
