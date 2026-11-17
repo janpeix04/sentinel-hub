@@ -34,7 +34,7 @@ If you don't have one yet, register for a free account at
    it, delete the client and create a new one.
 8. Click **Close** **(12)**. The new client is now listed under **OAuth clients** **(13)**.
 
-![Creating an OAuth client in the CDSE dashboard](img/create_oauth_client_cdse.png)
+![Creating an OAuth client in the CDSE dashboard](img/create_oauth_client_cdse.webp)
 
 *Screenshot: [CDSE documentation – Authentication](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html)*
 
@@ -43,7 +43,7 @@ If you don't have one yet, register for a free account at
 When a client expires (or is deleted) it moves to the **Inactive** tab and can no
 longer be used to obtain tokens. Create a new client and update your configuration.
 
-![Inactive OAuth clients](img/inactive_clients_cdse.png)
+![Inactive OAuth clients](img/inactive_clients_cdse.webp)
 
 ## 2. Configure the library
 
