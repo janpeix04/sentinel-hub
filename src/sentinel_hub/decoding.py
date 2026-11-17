@@ -1,9 +1,14 @@
 import struct
 import warnings
+from io import BytesIO
 from typing import IO
 
 import numpy as np
+import tifffile as tiff
 from PIL import Image
+
+from sentinel_hub.constants import MimeType
+from sentinel_hub.exception import ImageDecodingError
 
 
 def decode_image_with_pillow(stream: IO | str) -> np.ndarray:
@@ -55,3 +60,22 @@ def decode_jp2_image(stream: IO) -> np.ndarray:
     image = decode_image_with_pillow(stream)
     bit_depth = get_jp2_bit_depth(stream)
     return fix_jp2_image(image, bit_depth)
+
+
+def decode_image(data: bytes, image_type: MimeType) -> np.ndarray:
+    """
+    Decodes the image provided in various formats, i.e. png, 16-bit float tiff,
+    32-bit float tiff, jp2 and returns it as a numpy array.
+    """
+    bytes_data = BytesIO(data)
+
+    if image_type is MimeType.TIFF:
+        image = tiff.imread(bytes_data)
+    elif image_type is MimeType.JP2:
+        image = decode_jp2_image(bytes_data)
+    else:
+        image = decode_image_with_pillow(bytes_data)
+
+    if image is None:
+        raise ImageDecodingError("Unable to decode image.")
+    return image
