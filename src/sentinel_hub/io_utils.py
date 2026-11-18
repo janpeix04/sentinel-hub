@@ -111,7 +111,13 @@ def write_data(
         data_format = get_data_format(filename)
 
     if data_format is MimeType.TIFF:
-        tiff.imwrite(filename, data, compression=("lmza" if compress else None))
+        tiff.imwrite(
+            filename,
+            data,
+            photometric="minisblack",
+            planarconfig="contig",
+            compression=("lzma" if compress else None),
+        )
     elif data_format.is_image_format():
         Image.fromarray(data).save(filename)
     elif data_format is MimeType.NPY:

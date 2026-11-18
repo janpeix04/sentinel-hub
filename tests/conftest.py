@@ -8,8 +8,9 @@ from sentinel_hub.config import (
     SH_CLIENT_SECRET_ENV_VAR,
     SH_PROFILE_ENV_VAR,
 )
+from tests.testing_utils import get_input_folder
 
-INPUT_FOLDER = str(Path(__file__).resolve().parent / "TestInputs")
+INPUT_FOLDER = get_input_folder(__file__)
 
 
 @pytest.fixture(autouse=True)
