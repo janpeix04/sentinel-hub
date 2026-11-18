@@ -1,14 +1,66 @@
+import json
 import struct
+import tarfile
 import warnings
 from io import BytesIO
-from typing import IO
+from typing import IO, Any
 
 import numpy as np
 import tifffile as tiff
 from PIL import Image
+from xml.etree import ElementTree
 
 from sentinel_hub.constants import MimeType
 from sentinel_hub.exception import ImageDecodingError
+
+
+def decode_data(response_content: bytes, data_type: MimeType) -> Any:
+    """Interprets downloaded data and returns it."""
+    if data_type is MimeType.JSON:
+        response_text = response_content.decode("utf-8")
+        if not response_text:
+            return response_text
+        return json.loads(response_text)
+    if data_type is MimeType.TAR:
+        return decode_tar(response_content)
+    if MimeType.is_image_format(data_type):
+        return decode_image(response_content, data_type)
+    if (
+        data_type is MimeType.XML
+        or data_type is MimeType.GML
+        or data_type is MimeType.SAFE
+    ):
+        return ElementTree.fromstring(response_content)
+
+    try:
+        return {
+            MimeType.RAW: response_content,
+            MimeType.TXT: response_content,
+            MimeType.ZIP: BytesIO(response_content),
+        }[data_type]
+    except KeyError as exception:
+        raise ValueError(
+            f"Decoding data format {data_type} is not supported."
+        ) from exception
+
+
+def decode_image(data: bytes, image_type: MimeType) -> np.ndarray:
+    """
+    Decodes the image provided in various formats, i.e. png, 16-bit float tiff,
+    32-bit float tiff, jp2 and returns it as a numpy array.
+    """
+    bytes_data = BytesIO(data)
+
+    if image_type is MimeType.TIFF:
+        image = tiff.imread(bytes_data)
+    elif image_type is MimeType.JP2:
+        image = decode_jp2_image(bytes_data)
+    else:
+        image = decode_image_with_pillow(bytes_data)
+
+    if image is None:
+        raise ImageDecodingError("Unable to decode image.")
+    return image
 
 
 def decode_image_with_pillow(stream: IO | str) -> np.ndarray:
@@ -62,23 +114,20 @@ def decode_jp2_image(stream: IO) -> np.ndarray:
     return fix_jp2_image(image, bit_depth)
 
 
-def decode_image(data: bytes, image_type: MimeType) -> np.ndarray:
-    """
-    Decodes the image provided in various formats, i.e. png, 16-bit float tiff,
-    32-bit float tiff, jp2 and returns it as a numpy array.
-    """
-    bytes_data = BytesIO(data)
+def decode_tar(data: bytes | BytesIO) -> dict[str, object]:
+    """A decoder to convert response bytes into a dictionary of {filename: value}."""
+    if isinstance(data, bytes):
+        data = BytesIO(data)
 
-    if image_type is MimeType.TIFF:
-        image = tiff.imread(bytes_data)
-    elif image_type is MimeType.JP2:
-        image = decode_jp2_image(bytes_data)
-    else:
-        image = decode_image_with_pillow(bytes_data)
-
-    if image is None:
-        raise ImageDecodingError("Unable to decode image.")
-    return image
+    with tarfile.open(fileobj=data) as tar:
+        decoded_files = {}
+        for member in tar.getmembers():
+            file = tar.extractfile(member)
+            if file is not None:
+                decoded_files[member.name] = decode_data(
+                    file.read(), get_data_format(member.name)
+                )
+        return decoded_files
 
 
 def get_data_format(filename: str) -> MimeType:
