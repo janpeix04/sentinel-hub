@@ -114,3 +114,104 @@ class DownloadRequest:
                 "which might cause an error while saving on disk."
             )
             warnings.warn(message, category=SHRuntimeWarning)
+
+
+@dataclass(frozen=True)
+class DownloadResponse:
+    """A class defining a single download response."""
+
+    request: DownloadRequest
+    content: bytes
+    headers: JsonDict = field(default_factory=dict)
+    status_code: int | None = None
+    elapsed: float | None = None
+
+    @classmethod
+    def from_response(
+        cls, response: Response, request: DownloadRequest
+    ) -> DownloadResponse:
+        """
+        Creates `DownloadResponse` object from obtained from a service
+        response and request info.
+        """
+        return cls(
+            request=request,
+            content=response.content,
+            headers=dict(response.headers),
+            status_code=response.status_code,
+            elapsed=response.elapsed.total_seconds(),
+        )
+
+    @classmethod
+    def from_local(cls, request: DownloadRequest) -> DownloadResponse:
+        """Creates `DownloadResponse` object by loading it from locally cached data."""
+        request_path, response_path = request.get_storage_paths()
+        if response_path is None:
+            raise ValueError(
+                "Cannot load cached data because response path isn't defined."
+            )
+
+        content = read_data(response_path, data_format=MimeType.RAW)
+
+        respones_builder = functools.partial(cls, request=request, content=content)
+        if request_path is None:
+            return respones_builder()
+
+        response_info = read_data(request_path, data_format=MimeType.JSON).get(
+            "response"
+        )
+        if response_info is None:
+            return respones_builder()
+
+        return respones_builder(
+            headers=response_info.get("headers", {}),
+            status_code=response_info.get("status_code"),
+            elapsed=response_info.get("elapsed"),
+        )
+
+    def to_local(self) -> None:
+        """Caches data about a request and a response locally."""
+        request_path, response_path = self.request.get_storage_paths()
+        if response_path is None:
+            raise ValueError("Cannot cache data because response path isn't defined.")
+
+        write_data(response_path, self.content, data_format=MimeType.RAW)
+
+        if request_path is None:
+            return
+
+        info = {
+            "request": self.request.get_request_params(include_metadata=True),
+            "response": {
+                "headers": self.headers,
+                "status_code": self.status_code,
+                "elapsed": self.elapsed,
+            },
+        }
+        write_data(request_path, info, data_format=MimeType.JSON)
+
+    @property
+    def response_type(self) -> MimeType:
+        """Provides the expected mime type of the response data."""
+        if self.request.data_type is not MimeType.RAW:
+            return self.request.data_type
+
+        content_type = self.headers.get("Content-Type") or self.headers.get(
+            "content-type"
+        )
+
+        if content_type:
+            return MimeType.from_string(content_type)
+        return MimeType.RAW
+
+    def decode(self) -> Any:
+        """Decodes binary data into a Python object."""
+        return decode_data(self.content, data_type=self.response_type)
+
+    def derive(self, **params: Any) -> DownloadResponse:
+        """Create a new response by changing some parameters of the existing one."""
+        derived_params = {
+            _field.name: getattr(self, _field.name) for _field in fields(self)
+        }
+        derived_params.update(params)
+        return DownloadResponse(**derived_params)
