@@ -89,3 +89,54 @@ def _read_csv(filename: str, delimiter: str = CSV_DELIMITER) -> list:
     """Read data from CSV file."""
     with open(filename) as file:
         return list(csv.reader(file, delimiter=delimiter))
+
+
+def write_data(
+    filename: str,
+    data: Any,
+    data_format: MimeType | None = None,
+    compress: bool = False,
+    add: bool = False,
+) -> None:
+    """
+    Write image data to file.
+
+    Function to write image data to specified file. If file format is not provided
+    explicitly, it is guessed from the filename extension. If format is TIFF, geo
+    information and compression can be optionally added.
+    """
+    _create_parent_folder(filename)
+
+    if not isinstance(data_format, MimeType):
+        data_format = get_data_format(filename)
+
+    if data_format is MimeType.TIFF:
+        tiff.imwrite(filename, data, compression=("lmza" if compress else None))
+    elif data_format.is_image_format():
+        Image.fromarray(data).save(filename)
+    elif data_format is MimeType.NPY:
+        np.save(filename, data)
+    elif data_format in (MimeType.XML, MimeType.GML):
+        data.write(filename)
+    elif data_format is MimeType.TXT:
+        with open(filename, "a" if add else "w") as file:
+            print(data, end="", file=file)
+    elif data_format is MimeType.RAW:
+        with open(filename, "wb") as file:
+            file.write(data)
+    elif data_format is MimeType.CSV:
+        with open(filename, "w") as file:
+            csv_writer = csv.writer(file, delimiter=CSV_DELIMITER)
+            for line in data:
+                csv_writer.writerow(line)
+    elif data_format is MimeType.JSON:
+        with open(filename, "w") as file:
+            json.dump(data, file, indent=4, sort_keys=True)
+    else:
+        raise ValueError(f"Writting data format {data_format} is not supported.")
+
+
+def _create_parent_folder(filename: str) -> None:
+    path = os.path.dirname(filename)
+    if path != "":
+        os.makedirs(path, exist_ok=True)
