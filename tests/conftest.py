@@ -9,6 +9,8 @@ from sentinel_hub.config import (
     SH_PROFILE_ENV_VAR,
 )
 
+INPUT_FOLDER = str(Path(__file__).resolve().parent / "TestInputs")
+
 
 @pytest.fixture(autouse=True)
 def isolated_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -19,3 +21,8 @@ def isolated_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         SHConfig, "get_config_location", staticmethod(lambda: str(config_path))
     )
+
+
+@pytest.fixture(name="input_folder", scope="session")
+def input_folder_fixture() -> str:
+    return INPUT_FOLDER

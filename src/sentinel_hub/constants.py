@@ -55,7 +55,7 @@ class MimeType(Enum):
         if guessed_extension:
             mime_type_str = guessed_extension.strip(".")
         else:
-            mime_type_str = guessed_extension.strip("/")[-1]
+            mime_type_str = mime_type_str.split("/")[-1]
 
         if MimeType.has_value(mime_type_str):
             return MimeType(mime_type_str)
