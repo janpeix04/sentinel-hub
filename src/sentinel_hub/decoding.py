@@ -3,12 +3,14 @@ import struct
 import tarfile
 import warnings
 from io import BytesIO
+from json import JSONDecodeError
 from typing import IO, Any
+from xml.etree import ElementTree
 
 import numpy as np
 import tifffile as tiff
 from PIL import Image
-from xml.etree import ElementTree
+from requests import Response
 
 from sentinel_hub.constants import MimeType
 from sentinel_hub.exception import ImageDecodingError
@@ -128,6 +130,39 @@ def decode_tar(data: bytes | BytesIO) -> dict[str, object]:
                     file.read(), get_data_format(member.name)
                 )
         return decoded_files
+
+
+def decode_sentinel_hub_error_msg(response: Response) -> str:
+    """Decodes error message from Sentinel Hub service."""
+    if not isinstance(response.content, bytes) or not response.content:
+        return ""
+
+    try:
+        json_message = json.loads(response.content)
+        if isinstance(json_message, dict) and "error" in json_message:
+            json_message = json_message["error"]
+
+        if isinstance(json_message, str):
+            return json_message
+        return json.dumps(json_message)
+    except JSONDecodeError:
+        pass
+
+    try:
+        server_message = []
+        for element in decode_data(response.content, MimeType.XML):
+            if (
+                "ServiceException" in element.tag
+                or "Message" in element.tag
+                or element.tag == "body"
+            ):
+                for text in element.itertext():
+                    stripped_text = text.strip()
+                    if stripped_text:
+                        server_message.append(stripped_text)
+        return " ".join(server_message)
+    except ElementTree.ParseError:
+        return response.text
 
 
 def get_data_format(filename: str) -> MimeType:
