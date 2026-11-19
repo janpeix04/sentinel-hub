@@ -42,9 +42,14 @@ class SHUserWarning(UserWarning):
 
 
 class SHRateLimitWarning(SHRuntimeWarning):
-    """A custom runtime warning in case user hit the rate limit for downloads"""
+    """A custom runtime warning in case user hit the rate limit for downloads."""
+
+
+class SHDeprecationWarning(DeprecationWarning):
+    """A custom deprecation warning for sentinel-hub package."""
 
 
 warnings.simplefilter("always", SHRuntimeWarning)
 warnings.simplefilter("always", SHRateLimitWarning)
 warnings.simplefilter("default", SHUserWarning)
+warnings.simplefilter("default", SHDeprecationWarning)
