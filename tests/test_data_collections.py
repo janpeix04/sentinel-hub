@@ -7,6 +7,7 @@ import pytest
 
 from sentinel_hub import DataCollection
 from sentinel_hub.data_collections import DataCollectionDefinition, OrbitDirection
+from sentinel_hub.data_collections_bands import Unit
 
 
 @pytest.mark.parametrize(
@@ -146,6 +147,8 @@ def test_custom_collection_pickling() -> None:
         DataCollection.SENTINEL1,
         DataCollection.SENTINEL1_IW,
         DataCollection.SENTINEL1_EW_SH_DES,
+        DataCollection.SENTINEL3_OLCI,
+        DataCollection.SENTINEL3_SLSTR,
     ],
 )
 @pytest.mark.parametrize(
@@ -178,6 +181,95 @@ def test_sentinel2_definitions(
 ) -> None:
     assert data_collection.catalog_id == catalog_id
     assert data_collection.has_cloud_coverage is has_cloud_coverage
+
+
+@pytest.mark.parametrize(
+    (
+        "data_collection",
+        "collection_id",
+        "sensor_type",
+        "has_cloud_coverage",
+        "band_names",
+        "metaband_names",
+    ),
+    [
+        (
+            DataCollection.SENTINEL3_OLCI,
+            "sentinel-3-olci",
+            "OLCI",
+            False,
+            [f"B{index:02}" for index in range(1, 22)],
+            [
+                "QUALITY_FLAGS",
+                "SAA",
+                "SZA",
+                "VAA",
+                "VZA",
+                "HUMIDITY",
+                "SEA_LEVEL_PRESSURE",
+                "TOTAL_COLUMN_OZONE",
+                "TOTAL_COLUMN_WATER_VAPOUR",
+                "dataMask",
+            ],
+        ),
+        (
+            DataCollection.SENTINEL3_SLSTR,
+            "sentinel-3-slstr",
+            "SLSTR",
+            True,
+            ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "F1", "F2"],
+            ["dataMask"],
+        ),
+    ],
+)
+def test_sentinel3_definitions(
+    data_collection: DataCollection,
+    collection_id: str,
+    sensor_type: str,
+    has_cloud_coverage: bool,
+    band_names: list[str],
+    metaband_names: list[str],
+) -> None:
+    assert data_collection.api_id == collection_id
+    assert data_collection.catalog_id == collection_id
+    assert data_collection.service_url == DataCollection.SENTINEL2_L2A.service_url
+    assert data_collection.sensor_type == sensor_type
+    assert data_collection.processing_level == "L1B"
+    assert data_collection.has_cloud_coverage is has_cloud_coverage
+    assert data_collection.orbit_direction is None
+    assert data_collection.is_sentinel3
+    assert not data_collection.is_sentinel1
+
+    assert [band.name for band in data_collection.bands] == band_names
+    assert [band.name for band in data_collection.metabands] == metaband_names
+
+
+@pytest.mark.parametrize(
+    ("data_collection", "band_name", "units"),
+    [
+        (DataCollection.SENTINEL3_OLCI, "B01", (Unit.REFLECTANCE, Unit.RADIANCE)),
+        (DataCollection.SENTINEL3_SLSTR, "S6", (Unit.REFLECTANCE, Unit.RADIANCE)),
+        (DataCollection.SENTINEL3_SLSTR, "S7", (Unit.BRIGHTNESS_TEMPERATURE,)),
+        (DataCollection.SENTINEL3_SLSTR, "F2", (Unit.BRIGHTNESS_TEMPERATURE,)),
+    ],
+)
+def test_sentinel3_band_units(
+    data_collection: DataCollection, band_name: str, units: tuple[Unit, ...]
+) -> None:
+    band = next(band for band in data_collection.bands if band.name == band_name)
+    assert band.units == units
+    assert len(band.output_types) == len(units)
+
+
+@pytest.mark.parametrize(
+    "data_collection",
+    [
+        DataCollection.SENTINEL2_L2A,
+        DataCollection.SENTINEL1_IW,
+    ],
+)
+def test_is_not_sentinel3(data_collection: DataCollection) -> None:
+    assert not data_collection.is_sentinel3
 
 
 @pytest.mark.parametrize(
@@ -289,7 +381,13 @@ def test_sentinel1_collections_are_distinct() -> None:
 
 
 @pytest.mark.parametrize(
-    "data_collection", [DataCollection.SENTINEL2_L1C, DataCollection.SENTINEL2_L2A]
+    "data_collection",
+    [
+        DataCollection.SENTINEL2_L1C,
+        DataCollection.SENTINEL2_L2A,
+        DataCollection.SENTINEL3_OLCI,
+        DataCollection.SENTINEL3_SLSTR,
+    ],
 )
 def test_is_not_sentinel1(data_collection: DataCollection) -> None:
     assert not data_collection.is_sentinel1

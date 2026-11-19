@@ -6,7 +6,14 @@ from sentinel_hub import DataCollection, generate_evalscript
 
 
 @pytest.mark.parametrize(
-    "data_collection", [DataCollection.SENTINEL2_L1C, DataCollection.SENTINEL2_L2A]
+    "data_collection",
+    [
+        DataCollection.SENTINEL2_L1C,
+        DataCollection.SENTINEL2_L2A,
+        DataCollection.SENTINEL1_IW,
+        DataCollection.SENTINEL3_OLCI,
+        DataCollection.SENTINEL3_SLSTR,
+    ],
 )
 def test_collection_bands(data_collection: DataCollection) -> None:
     evalscript = generate_evalscript(data_collection=data_collection)
@@ -117,6 +124,29 @@ def test_sample_type(use_dn: bool) -> None:
 
     expected_float_count = len(data_collection.bands) if not use_dn else 0
     assert evalscript.count('"FLOAT32"') == expected_float_count
+
+
+def test_sentinel3_units() -> None:
+    evalscript = generate_evalscript(
+        data_collection=DataCollection.SENTINEL3_SLSTR,
+        bands=["S2", "S3", "S8"],
+        meta_bands=["dataMask"],
+    )
+
+    assert 'units: ["REFLECTANCE", "REFLECTANCE", "BRIGHTNESS_TEMPERATURE", "DN"]' in (
+        evalscript
+    )
+    assert evalscript.count('"FLOAT32"') == 3
+    assert evalscript.count('"UINT8"') == 1
+
+
+def test_band_without_sample_type() -> None:
+    with pytest.raises(ValueError, match="QUALITY_FLAGS"):
+        generate_evalscript(
+            data_collection=DataCollection.SENTINEL3_OLCI,
+            bands=["B08"],
+            meta_bands=["QUALITY_FLAGS"],
+        )
 
 
 @pytest.mark.parametrize("use_dn", [True, False], ids=lambda x: f"use_dn: {x}")
