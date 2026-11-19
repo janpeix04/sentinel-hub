@@ -1,9 +1,10 @@
 import os
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 
-from sentinel_hub import SHConfig, SHSession
+from sentinel_hub import SHConfig, SHDownloadClient, SHSession
 from sentinel_hub.config import (
     SH_CLIENT_ID_ENV_VAR,
     SH_CLIENT_SECRET_ENV_VAR,
@@ -49,6 +50,13 @@ def isolated_config(
     monkeypatch.setattr(
         SHConfig, "get_config_location", staticmethod(lambda: str(config_path))
     )
+
+
+@pytest.fixture(autouse=True)
+def clear_client_cache() -> Generator[None]:
+    SHDownloadClient.clear_cache()
+    yield
+    SHDownloadClient.clear_cache()
 
 
 @pytest.fixture(name="input_folder", scope="session")
