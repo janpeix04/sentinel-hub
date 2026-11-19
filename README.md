@@ -17,6 +17,7 @@
 - [Quick start](#quick-start)
 - [Services](#services)
 - [Development](#development)
+- [Changelog](CHANGELOG.md)
 - [License](#license)
 
 ## Introduction
@@ -41,10 +42,10 @@ Requires **Python 3.14+**. The package is not on PyPI yet, so install it from Gi
 
 ```bash
 # with uv
-uv add git+https://github.com/janpeix04/sentinel-hub.git
+uv add git+https://github.com/janpeix04/sentinel-hub.git@v0.1.0
 
 # or with pip
-pip install git+https://github.com/janpeix04/sentinel-hub.git
+pip install git+https://github.com/janpeix04/sentinel-hub.git@v0.1.0
 ```
 
 Then [set up your CDSE credentials](docs/configuration.md).
