@@ -14,17 +14,25 @@ Sentinel-2 bands have 10 m, 20 m or 60 m pixels. To request an image at a given 
 resolution for a WGS84 bbox, compute the pixel size:
 
 ```python
-from sentinel_hub import BBox, CRS, bbox_to_dimensions, bbox_to_resolution, get_image_dimension
+from sentinel_hub import (
+    BBox,
+    CRS,
+    bbox_to_dimensions,
+    bbox_to_resolution,
+    get_image_dimension,
+)
 
 bbox = BBox((13.35, 45.85, 13.55, 46.0), crs=CRS.WGS84)
 
-bbox_to_dimensions(bbox, resolution=10)        # (width, height) at 10 m, here (1583, 1636)
+bbox_to_dimensions(bbox, resolution=10)  # (width, height) at 10 m, here (1583, 1636)
 bbox_to_dimensions(bbox, resolution=(10, 20))  # different x / y resolution
 
-bbox_to_resolution(bbox, width=512, height=512)               # (resx, resy) in metres
-bbox_to_resolution(bbox, width=512, height=512, meters=False) # in CRS units (degrees here)
+bbox_to_resolution(bbox, width=512, height=512)  # (resx, resy) in metres
+bbox_to_resolution(
+    bbox, width=512, height=512, meters=False
+)  # in CRS units (degrees here)
 
-get_image_dimension(bbox, width=512)   # height that keeps the aspect ratio
+get_image_dimension(bbox, width=512)  # height that keeps the aspect ratio
 get_image_dimension(bbox, height=512)  # width that keeps the aspect ratio
 ```
 
@@ -36,10 +44,10 @@ regardless of the input CRS.
 ```python
 from sentinel_hub import get_utm_crs, to_utm_bbox, transform_point
 
-get_utm_crs(13.45, 45.92)                       # CRS.UTM_33N
+get_utm_crs(13.45, 45.92)  # CRS.UTM_33N
 get_utm_crs(1497000, 5768000, source_crs=CRS.POP_WEB)
 
-to_utm_bbox(bbox)   # BBox in the UTM zone of its centre (returned as-is if already UTM)
+to_utm_bbox(bbox)  # BBox in the UTM zone of its centre (returned as-is if already UTM)
 
 transform_point((13.45, 45.92), CRS.WGS84, CRS.UTM_33N)  # (easting, northing)
 ```
@@ -54,7 +62,7 @@ from sentinel_hub import pixel_to_utm, utm_to_pixel
 utm_bbox = to_utm_bbox(bbox)
 transform = utm_bbox.get_transform_vector(10, 10)
 
-row, col = utm_to_pixel(easting, northing, transform)                  # ints
+row, col = utm_to_pixel(easting, northing, transform)  # ints
 row, col = utm_to_pixel(easting, northing, transform, truncate=False)  # floats
 easting, northing = pixel_to_utm(row, col, transform)
 ```

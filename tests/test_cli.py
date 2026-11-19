@@ -77,13 +77,27 @@ def test_bands(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_evalscript(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
-    assert main(["evalscript", "SENTINEL2_L2A", "--bands", "B04,B03,B02", "--merged-output", "default"]) == 0
+    assert (
+        main(
+            [
+                "evalscript",
+                "SENTINEL2_L2A",
+                "--bands",
+                "B04,B03,B02",
+                "--merged-output",
+                "default",
+            ]
+        )
+        == 0
+    )
     out = capsys.readouterr().out
     assert out.startswith("//VERSION=3")
     assert "default: [sample.B04, sample.B03, sample.B02]" in out
 
     output = tmp_path / "script.js"
-    assert main(["evalscript", "SENTINEL2_L2A", "--bands", "B08", "-o", str(output)]) == 0
+    assert (
+        main(["evalscript", "SENTINEL2_L2A", "--bands", "B08", "-o", str(output)]) == 0
+    )
     assert '"B08"' in output.read_text(encoding="utf-8")
 
 
@@ -97,7 +111,10 @@ def test_evalscript_unknown_band(capsys: pytest.CaptureFixture[str]) -> None:
 def test_config_set_and_show(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["config", "set", "sh_client_id", "my-client-id"]) == 0
     assert main(["config", "set", "max_download_attempts", "7"]) == 0
-    assert main(["--profile", "other", "config", "set", "download_timeout_seconds", "30"]) == 0
+    assert (
+        main(["--profile", "other", "config", "set", "download_timeout_seconds", "30"])
+        == 0
+    )
 
     config = SHConfig()
     assert config.sh_client_id == "my-client-id"
@@ -116,7 +133,9 @@ def test_config_set_and_show(capsys: pytest.CaptureFixture[str]) -> None:
         (["config", "set", "max_download_attempts", "many"], "expects a int value"),
     ],
 )
-def test_config_set_invalid(args: list[str], message: str, capsys: pytest.CaptureFixture[str]) -> None:
+def test_config_set_invalid(
+    args: list[str], message: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     with pytest.raises(SystemExit):
         main(args)
     assert message in capsys.readouterr().err
@@ -132,8 +151,24 @@ def test_process(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 
     monkeypatch.setattr(SHRequest, "get_data", fake_get_data)
     output = tmp_path / "out" / "image.tif"
-    args = ["process", "SENTINEL2_L2A", "--bbox", BBOX, "--time", "2024-06-01/2024-06-30"]
-    args += ["--bands", "B04,B03,B02", "--size", "100,50", "--maxcc", "0.2", "-o", str(output)]
+    args = [
+        "process",
+        "SENTINEL2_L2A",
+        "--bbox",
+        BBOX,
+        "--time",
+        "2024-06-01/2024-06-30",
+    ]
+    args += [
+        "--bands",
+        "B04,B03,B02",
+        "--size",
+        "100,50",
+        "--maxcc",
+        "0.2",
+        "-o",
+        str(output),
+    ]
     assert main(args) == 0
 
     assert output.read_bytes() == b"tiff-bytes"
@@ -151,11 +186,19 @@ def test_process(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     [
         (["--size", "10,10", "-o", "x.tif"], "evalscript is required"),
         (["--bands", "B04", "-o", "x.tif"], "output size is required"),
-        (["--bands", "B04", "--size", "10,10", "--resolution", "10", "-o", "x.tif"], "not both"),
-        (["--bands", "B04", "--size", "10,10", "-o", "x.bmp"], "Cannot infer the format"),
+        (
+            ["--bands", "B04", "--size", "10,10", "--resolution", "10", "-o", "x.tif"],
+            "not both",
+        ),
+        (
+            ["--bands", "B04", "--size", "10,10", "-o", "x.bmp"],
+            "Cannot infer the format",
+        ),
     ],
 )
-def test_process_invalid(extra_args: list[str], message: str, capsys: pytest.CaptureFixture[str]) -> None:
+def test_process_invalid(
+    extra_args: list[str], message: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     with pytest.raises(SystemExit):
         main(["process", "SENTINEL2_L2A", "--bbox", BBOX, *extra_args])
     assert message in capsys.readouterr().err
@@ -163,11 +206,24 @@ def test_process_invalid(extra_args: list[str], message: str, capsys: pytest.Cap
 
 def test_process_requires_area(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
-        main(["process", "SENTINEL2_L2A", "--bands", "B04", "--size", "10,10", "-o", "x.tif"])
+        main(
+            [
+                "process",
+                "SENTINEL2_L2A",
+                "--bands",
+                "B04",
+                "--size",
+                "10,10",
+                "-o",
+                "x.tif",
+            ]
+        )
     assert "area of interest is required" in capsys.readouterr().err
 
 
-def test_stats(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_stats(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     captured: dict[str, Any] = {}
 
     def fake_get_data(self: SHStatistical, **kwargs: Any) -> list[dict]:
@@ -176,20 +232,46 @@ def test_stats(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[st
 
     monkeypatch.setattr(SHStatistical, "get_data", fake_get_data)
     args = ["stats", "SENTINEL2_L2A", "--bbox", BBOX, "--time", "2024-06-01/2024-06-30"]
-    args += ["--bands", "B04", "--interval", "P10D", "--last-interval", "SHORTEN", "--resolution", "100"]
+    args += [
+        "--bands",
+        "B04",
+        "--interval",
+        "P10D",
+        "--last-interval",
+        "SHORTEN",
+        "--resolution",
+        "100",
+    ]
     assert main(args) == 0
 
     assert json.loads(capsys.readouterr().out) == {"data": [], "status": "OK"}
     aggregation = captured["payload"]["aggregation"]
-    assert aggregation["aggregationInterval"] == {"of": "P10D", "lastIntervalBehavior": "SHORTEN"}
+    assert aggregation["aggregationInterval"] == {
+        "of": "P10D",
+        "lastIntervalBehavior": "SHORTEN",
+    }
     assert "dataMask" in aggregation["evalscript"]
     assert aggregation["width"] > 0
 
 
 @pytest.mark.sh_integration
 def test_search_live(capsys: pytest.CaptureFixture[str]) -> None:
-    args = ["search", "SENTINEL2_L2A", "--bbox", BBOX, "--time", "2024-06-01/2024-06-30"]
-    args += ["--filter", "eo:cloud_cover < 20", "--max-results", "5", "--format", "json"]
+    args = [
+        "search",
+        "SENTINEL2_L2A",
+        "--bbox",
+        BBOX,
+        "--time",
+        "2024-06-01/2024-06-30",
+    ]
+    args += [
+        "--filter",
+        "eo:cloud_cover < 20",
+        "--max-results",
+        "5",
+        "--format",
+        "json",
+    ]
     assert main(args) == 0
     features = json.loads(capsys.readouterr().out)["features"]
     assert 0 < len(features) <= 5
@@ -199,7 +281,23 @@ def test_search_live(capsys: pytest.CaptureFixture[str]) -> None:
 @pytest.mark.sh_integration
 def test_process_live(tmp_path: Path) -> None:
     output = tmp_path / "image.png"
-    args = ["process", "SENTINEL2_L2A", "--bbox", BBOX, "--time", "2024-06-01/2024-06-30"]
-    args += ["--bands", "B04,B03,B02", "--size", "64,64", "--maxcc", "0.2", "-o", str(output)]
+    args = [
+        "process",
+        "SENTINEL2_L2A",
+        "--bbox",
+        BBOX,
+        "--time",
+        "2024-06-01/2024-06-30",
+    ]
+    args += [
+        "--bands",
+        "B04,B03,B02",
+        "--size",
+        "64,64",
+        "--maxcc",
+        "0.2",
+        "-o",
+        str(output),
+    ]
     assert main(args) == 0
     assert output.read_bytes().startswith(b"\x89PNG")

@@ -16,7 +16,7 @@ exist for a place and time – before you spend processing units downloading the
 ```python
 from sentinel_hub import SHCatalog, SHConfig
 
-catalog = SHCatalog()                  # uses SHConfig()
+catalog = SHCatalog()  # uses SHConfig()
 catalog = SHCatalog(config=SHConfig(profile="work"))
 ```
 
@@ -26,18 +26,18 @@ authenticated automatically through an `SHDownloadClient` (see [download.md](dow
 ## Service information
 
 ```python
-catalog.get_info()         # landing page: title, description, links
+catalog.get_info()  # landing page: title, description, links
 catalog.get_conformance()  # list of conformance classes the API implements
 ```
 
 ## Collections and features
 
 ```python
-collections = catalog.get_collections()          # list of STAC collection dicts
+collections = catalog.get_collections()  # list of STAC collection dicts
 [c["id"] for c in collections]
 # ['sentinel-2-l1c', 'sentinel-2-l2a', ...]
 
-s2 = catalog.get_collection("sentinel-2-l2a")    # one collection
+s2 = catalog.get_collection("sentinel-2-l2a")  # one collection
 s2["extent"]["temporal"]
 
 feature = catalog.get_feature(
@@ -63,7 +63,10 @@ results = catalog.search(
     bbox=bbox,
     time=("2024-06-01", "2024-06-30"),
     filter="eo:cloud_cover < 20",
-    fields={"include": ["id", "properties.datetime", "properties.eo:cloud_cover"], "exclude": []},
+    fields={
+        "include": ["id", "properties.datetime", "properties.eo:cloud_cover"],
+        "exclude": [],
+    },
     limit=50,
 )
 ```
@@ -91,7 +94,9 @@ catalog.search(cid, time=..., bbox=bbox, filter="eo:cloud_cover < 10")
 
 # CQL2 JSON
 catalog.search(
-    cid, time=..., bbox=bbox,
+    cid,
+    time=...,
+    bbox=bbox,
     filter={"op": "<", "args": [{"property": "eo:cloud_cover"}, 10]},
     filter_lang="cql2-json",
 )
@@ -110,9 +115,9 @@ for feature in results:
     print(feature["id"], feature["properties"]["datetime"])
 
 all_features = list(results)
-results.get_ids()          # list[str]
-results.get_timestamps()   # list[datetime.datetime]
-results.get_geometries()   # list[Geometry] (WGS84)
+results.get_ids()  # list[str]
+results.get_timestamps()  # list[datetime.datetime]
+results.get_geometries()  # list[Geometry] (WGS84)
 ```
 
 Combine timestamps with [`filter_times`](time-utils.md#filter_times) to drop near-duplicate

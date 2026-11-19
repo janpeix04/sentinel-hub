@@ -29,9 +29,9 @@ for authentication, retries, rate limiting, caching and multiprocessing.
 from sentinel_hub import SHConfig, SHSession
 
 session = SHSession(config=SHConfig())
-session.token            # dict with access_token, expires_at, ... (auto-refreshed)
+session.token  # dict with access_token, expires_at, ... (auto-refreshed)
 session.session_headers  # {"Authorization": "Bearer ..."}
-session.info()           # decoded JWT claims, e.g. session.info()["azp"] == client ID
+session.info()  # decoded JWT claims, e.g. session.info()["azp"] == client ID
 ```
 
 - Needs `sh_client_id` and `sh_client_secret` (see [configuration.md](configuration.md)),
@@ -68,7 +68,7 @@ Constructor options: `redownload=False`, `raise_download_errors=True`, `config=N
 the whole Python process, so creating many requests doesn't fetch many tokens.
 
 ```python
-SHDownloadClient.cache_session(session)                  # register a session
+SHDownloadClient.cache_session(session)  # register a session
 SHDownloadClient.cache_session(session, universal=True)  # use it for every config
 SHDownloadClient.clear_cache()
 ```
@@ -149,9 +149,11 @@ from concurrent.futures import ProcessPoolExecutor
 from sentinel_hub import SHDownloadClient, SHSession
 from sentinel_hub.download import SessionSharing, collect_shared_session
 
+
 def worker(request):
     SHDownloadClient.cache_session(collect_shared_session(), universal=True)
     return request.get_data()[0]
+
 
 session = SHSession(config=config)
 with SessionSharing(session):

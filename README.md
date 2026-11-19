@@ -56,8 +56,17 @@ Then [set up your CDSE credentials](docs/configuration.md).
 
 ```python
 from sentinel_hub import (
-    CRS, BBox, DataCollection, LastIntervalBehavior, MimeType, SHCatalog, SHConfig,
-    SHRequest, SHStatistical, bbox_to_dimensions, generate_evalscript,
+    CRS,
+    BBox,
+    DataCollection,
+    LastIntervalBehavior,
+    MimeType,
+    SHCatalog,
+    SHConfig,
+    SHRequest,
+    SHStatistical,
+    bbox_to_dimensions,
+    generate_evalscript,
 )
 
 config = SHConfig()  # reads config.toml / SH_CLIENT_ID / SH_CLIENT_SECRET
@@ -77,10 +86,14 @@ print(results.get_timestamps())
 # 2. Download a true-colour image
 request = SHRequest(
     evalscript=generate_evalscript(
-        DataCollection.SENTINEL2_L2A, bands=["B04", "B03", "B02"], merged_bands_output="default"
+        DataCollection.SENTINEL2_L2A,
+        bands=["B04", "B03", "B02"],
+        merged_bands_output="default",
     ),
     input_data=[
-        SHRequest.input_data(DataCollection.SENTINEL2_L2A, time_interval=time_interval, maxcc=0.2)
+        SHRequest.input_data(
+            DataCollection.SENTINEL2_L2A, time_interval=time_interval, maxcc=0.2
+        )
     ],
     responses=[SHRequest.output_response("default", MimeType.TIFF)],
     bbox=bbox,
@@ -115,7 +128,10 @@ stats_request = SHStatistical(
     config=config,
 )
 for interval in stats_request.get_data()[0]["data"]:
-    print(interval["interval"]["from"], interval["outputs"]["ndvi"]["bands"]["B0"]["stats"]["mean"])
+    print(
+        interval["interval"]["from"],
+        interval["outputs"]["ndvi"]["bands"]["B0"]["stats"]["mean"],
+    )
 ```
 
 ## Services

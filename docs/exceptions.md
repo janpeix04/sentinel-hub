@@ -28,8 +28,10 @@ from sentinel_hub import DownloadFailedException
 try:
     data = request.get_data()
 except DownloadFailedException as error:
-    print(error)                                         # includes the server's message
-    print(error.request_exception.response.status_code)  # may be None for connection errors
+    print(error)  # includes the server's message
+    print(
+        error.request_exception.response.status_code
+    )  # may be None for connection errors
 ```
 
 Configuration and input mistakes (missing credentials, invalid `maxcc`, both `size` and
