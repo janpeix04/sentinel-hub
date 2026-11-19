@@ -31,14 +31,6 @@ class _ProcessingLevel:
     L2A = "L2A"
 
 
-class OrbitDirection:
-    """Orbit directions"""
-
-    ASCENDING = "ASCENDING"
-    DESCENDING = "DESCENDING"
-    BOTH = "BOTH"
-
-
 def _shallow_asdict(dataclass_instance: Any) -> dict[str, Any]:
     """
     Returns a dictionary of fields and values, but is not recursive and does not deepcopy
@@ -81,7 +73,6 @@ class DataCollectionDefinition:
 
     api_id: str | None = None
     catalog_id: str | None = None
-    wfs_id: str | None = None
     service_url: str | None = None
     collection_type: str | None = None
     sensor_type: str | None = None
@@ -140,7 +131,6 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
     SENTINEL2_L1C = DataCollectionDefinition(
         api_id="sentinel-2-l1c",
         catalog_id="sentinel-2-l1c",
-        wfs_id="DSS1",
         service_url=ServiceUrl.CDSE,
         collection_type=_CollectionType.SENTINEL2,
         sensor_type=_SensorType.MSI,
@@ -152,7 +142,6 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
     SENTINEL2_L2A = DataCollectionDefinition(
         api_id="sentinel-2-l2a",
         catalog_id="sentinel-2-l2a",
-        wfs_id="DSS2",
         service_url=ServiceUrl.CDSE,
         collection_type=_CollectionType.SENTINEL2,
         sensor_type=_SensorType.MSI,
@@ -169,7 +158,6 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         *,
         api_id: str | None = None,
         catalog_id: str | None = None,
-        wfs_id: str | None = None,
         service_url: str | None = None,
         collection_type: str | None = None,
         sensor_type: str | None = None,
@@ -182,13 +170,12 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         Define a new data collection.
 
         Note that all parameters, except `name` are optional. If a data collection definition
-        won't be used for a certain use case (e.g. Process API, WFS, etc.), parameters for that
+        won't be used for a certain use case (e.g. Process API, Catalog API), parameters for that
         use case don't have to be defined.
         """
         definition = DataCollectionDefinition(
             api_id=api_id,
             catalog_id=catalog_id,
-            wfs_id=wfs_id,
             service_url=service_url,
             collection_type=collection_type,
             sensor_type=sensor_type,
@@ -260,15 +247,6 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         raise ValueError(
             f"Data collection {self.name} is missing a Sentinel Hub Catalog API identifier"
         )
-
-    @property
-    def wfs_id(self) -> str:
-        """Provides a Sentinel Hub WFS identifier or raises an error if it is not defined."""
-        if self.value.wfs_id is None:
-            raise ValueError(
-                f"Data collection {self.name} is missing a Sentinel Hub WFS identifier"
-            )
-        return self.value.wfs_id
 
     @property
     def bands(self) -> tuple[Band, ...]:

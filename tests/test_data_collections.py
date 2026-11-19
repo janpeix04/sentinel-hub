@@ -14,14 +14,14 @@ from sentinel_hub.data_collections import DataCollectionDefinition
     [
         (DataCollectionDefinition(), {}, {"api_id": None}),
         (
-            DataCollectionDefinition(api_id="X", wfs_id="Y"),
-            {"wfs_id": "Z"},
-            {"api_id": "X", "wfs_id": "Z", "collection_type": None},
+            DataCollectionDefinition(api_id="X", catalog_id="Y"),
+            {"catalog_id": "Z"},
+            {"api_id": "X", "catalog_id": "Z", "collection_type": None},
         ),
         (
             DataCollection.SENTINEL2_L1C.value,
             {"api_id": None},
-            {"api_id": None, "wfs_id": "DSS1"},
+            {"api_id": None, "catalog_id": "sentinel-2-l1c"},
         ),
     ],
 )
@@ -79,7 +79,7 @@ def test_collection_definitions_equal(
     [
         ({"api_id": "X", "_name": "A"}, {"api_id": "Y", "_name": "A"}),
         ({"api_id": "X", "has_cloud_coverage": True}, {"api_id": "X"}),
-        ({"api_id": "X", "wfs_id": 2132342143454364}, {"api_id": "X"}),
+        ({"api_id": "X", "catalog_id": "Y"}, {"api_id": "X"}),
     ],
 )
 def test_collection_definitions_not_equal(
@@ -126,7 +126,7 @@ def test_define_from() -> None:
 
     assert data_collection == DataCollection.NEW_S2
     assert data_collection.api_id == "X"
-    assert data_collection.wfs_id == DataCollection.SENTINEL2_L2A.wfs_id
+    assert data_collection.catalog_id == DataCollection.SENTINEL2_L2A.catalog_id
     assert data_collection.bands == tuple(bands)
 
 
@@ -146,7 +146,6 @@ def test_custom_collection_pickling() -> None:
     [
         "api_id",
         "catalog_id",
-        "wfs_id",
         "service_url",
         "bands",
         "metabands",
@@ -182,7 +181,7 @@ def test_catalog_id_falls_back_to_api_id() -> None:
 def test_attributes_empty_fail() -> None:
     data_collection = DataCollection.define("EMPTY")
 
-    for attr_name in ["api_id", "catalog_id", "wfs_id", "bands", "metabands"]:
+    for attr_name in ["api_id", "catalog_id", "bands", "metabands"]:
         with pytest.raises(ValueError):
             getattr(data_collection, attr_name)
 

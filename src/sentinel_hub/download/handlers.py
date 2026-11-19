@@ -2,7 +2,7 @@ import functools
 import logging
 import time
 from collections.abc import Callable
-from typing import Protocol, TypeVar
+from typing import Protocol
 
 import requests
 
@@ -17,10 +17,6 @@ class _HasConfig(Protocol):
 
     config: SHConfig
 
-
-Self = TypeVar("Self")
-SelfWithConfig = TypeVar("SelfWithConfig", bound=_HasConfig)
-T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
 

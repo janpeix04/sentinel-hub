@@ -1,13 +1,11 @@
 import datetime as dt
 from collections.abc import Iterable
-from typing import Any, Literal, TypeVar, overload
+from typing import Any, Literal, overload
 
 import dateutil.parser
 import dateutil.tz
 
 from sentinel_hub.types import RawTimeIntervalType, RawTimeType
-
-TimeType = TypeVar("TimeType", dt.date, dt.datetime)
 
 
 def is_valid_time(time: str) -> bool:
