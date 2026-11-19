@@ -61,7 +61,9 @@ def parse_bbox(value: str, crs: str) -> BBox:
     try:
         coords = tuple(float(part) for part in parts)
     except ValueError as exception:
-        raise CLIError(f"Bounding box values must be numbers, got `{value}`") from exception
+        raise CLIError(
+            f"Bounding box values must be numbers, got `{value}`"
+        ) from exception
     return BBox(coords, crs=CRS(crs))
 
 
@@ -166,14 +168,20 @@ def get_evalscript(
             )
         except ValueError as exception:
             raise CLIError(str(exception)) from exception
-    raise CLIError("An evalscript is required: pass --evalscript FILE or --bands B04,B03,B02")
+    raise CLIError(
+        "An evalscript is required: pass --evalscript FILE or --bands B04,B03,B02"
+    )
 
 
-def get_input_data(args: argparse.Namespace, collection: DataCollection, **kwargs: Any) -> JsonDict:
+def get_input_data(
+    args: argparse.Namespace, collection: DataCollection, **kwargs: Any
+) -> JsonDict:
     return SHRequest.input_data(
         collection,
         maxcc=args.maxcc,
-        mosaicking_order=MosaickingOrder(args.mosaicking_order) if args.mosaicking_order else None,
+        mosaicking_order=MosaickingOrder(args.mosaicking_order)
+        if args.mosaicking_order
+        else None,
         upsampling=ResamplingType(args.upsampling) if args.upsampling else None,
         downsampling=ResamplingType(args.downsampling) if args.downsampling else None,
         **kwargs,
@@ -204,14 +212,20 @@ def cmd_config_set(args: argparse.Namespace) -> None:
     fields = {field.name: field for field in dataclasses.fields(_SHConfig)}
     key = args.key.lower()
     if key not in fields:
-        raise CLIError(f"Unknown config parameter `{args.key}`. Available: {', '.join(fields)}")
+        raise CLIError(
+            f"Unknown config parameter `{args.key}`. Available: {', '.join(fields)}"
+        )
 
-    config = SHConfig.load(profile=args.profile) if _profile_exists(args.profile) else SHConfig(
-        use_defaults=True
+    config = (
+        SHConfig.load(profile=args.profile)
+        if _profile_exists(args.profile)
+        else SHConfig(use_defaults=True)
     )
     setattr(config, key, _cast_config_value(fields[key], args.value))
     config.save(profile=args.profile)
-    print(f"Set `{key}` in profile `{args.profile or DEFAULT_PROFILE}`", file=sys.stderr)
+    print(
+        f"Set `{key}` in profile `{args.profile or DEFAULT_PROFILE}`", file=sys.stderr
+    )
 
 
 def cmd_config_path(args: argparse.Namespace) -> None:
@@ -296,7 +310,9 @@ def cmd_search(args: argparse.Namespace) -> None:
     elif args.format == "timestamps":
         content = "\n".join(feature["properties"]["datetime"] for feature in features)
     else:
-        content = json.dumps({"type": "FeatureCollection", "features": features}, indent=2)
+        content = json.dumps(
+            {"type": "FeatureCollection", "features": features}, indent=2
+        )
 
     print(f"Found {len(features)} feature(s)", file=sys.stderr)
     write_output(content, args.output)
@@ -311,8 +327,12 @@ def cmd_process(args: argparse.Namespace) -> None:
     output_format = args.format or _format_from_path(args.output)
     request = SHRequest(
         evalscript=evalscript,
-        input_data=[get_input_data(args, collection, time_interval=parse_time(args.time))],
-        responses=[SHRequest.output_response(args.response_id, MimeType(output_format))],
+        input_data=[
+            get_input_data(args, collection, time_interval=parse_time(args.time))
+        ],
+        responses=[
+            SHRequest.output_response(args.response_id, MimeType(output_format))
+        ],
         bbox=bbox,
         geometry=geometry,
         size=size,
@@ -350,7 +370,9 @@ def cmd_stats(args: argparse.Namespace) -> None:
             evalscript=evalscript,
             time_interval=parse_time(args.time),
             aggregation_interval=args.interval,
-            last_interval_behavior=LastIntervalBehavior(args.last_interval) if args.last_interval else None,
+            last_interval_behavior=LastIntervalBehavior(args.last_interval)
+            if args.last_interval
+            else None,
             size=size,
             resolution=resolution,
         ),
@@ -372,14 +394,18 @@ def _add_area_args(parser: argparse.ArgumentParser, required: bool) -> None:
     group = parser.add_argument_group("area of interest")
     group.add_argument("--bbox", help="bounding box as `min_x,min_y,max_x,max_y`")
     group.add_argument("--geometry", metavar="FILE", help="GeoJSON file with a polygon")
-    group.add_argument("--crs", default="4326", help="CRS of --bbox / --geometry (default: 4326)")
+    group.add_argument(
+        "--crs", default="4326", help="CRS of --bbox / --geometry (default: 4326)"
+    )
     if required:
         group.description = "at least one of --bbox / --geometry is required"
 
 
 def _add_input_args(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("input data")
-    group.add_argument("--maxcc", type=float, help="max cloud coverage, between 0 and 1")
+    group.add_argument(
+        "--maxcc", type=float, help="max cloud coverage, between 0 and 1"
+    )
     group.add_argument(
         "--mosaicking-order", choices=[order.value for order in MosaickingOrder]
     )
@@ -396,8 +422,12 @@ def _add_output_size_args(parser: argparse.ArgumentParser) -> None:
 
 def _add_evalscript_args(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("evalscript (one is required)")
-    group.add_argument("--evalscript", metavar="FILE", help="path to an evalscript file")
-    group.add_argument("--bands", help="comma-separated bands to generate an evalscript from")
+    group.add_argument(
+        "--evalscript", metavar="FILE", help="path to an evalscript file"
+    )
+    group.add_argument(
+        "--bands", help="comma-separated bands to generate an evalscript from"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -405,37 +435,65 @@ def build_parser() -> argparse.ArgumentParser:
         prog="sentinel-hub",
         description="Command line client for the Sentinel Hub APIs on the Copernicus Data Space Ecosystem.",
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument("--profile", help=f"config profile to use (default: {DEFAULT_PROFILE})")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
+    parser.add_argument(
+        "--profile", help=f"config profile to use (default: {DEFAULT_PROFILE})"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     # config
-    config_parser = subparsers.add_parser("config", help="show or edit the configuration")
-    config_subparsers = config_parser.add_subparsers(dest="config_command", required=True, metavar="ACTION")
+    config_parser = subparsers.add_parser(
+        "config", help="show or edit the configuration"
+    )
+    config_subparsers = config_parser.add_subparsers(
+        dest="config_command", required=True, metavar="ACTION"
+    )
     show = config_subparsers.add_parser("show", help="print the active configuration")
-    show.add_argument("--show-secrets", action="store_true", help="do not mask credentials")
+    show.add_argument(
+        "--show-secrets", action="store_true", help="do not mask credentials"
+    )
     show.set_defaults(func=cmd_config_show)
-    set_parser = config_subparsers.add_parser("set", help="set a parameter in config.toml")
+    set_parser = config_subparsers.add_parser(
+        "set", help="set a parameter in config.toml"
+    )
     set_parser.add_argument("key", help="parameter name, e.g. sh_client_id")
     set_parser.add_argument("value")
     set_parser.set_defaults(func=cmd_config_set)
-    path = config_subparsers.add_parser("path", help="print the location of config.toml")
+    path = config_subparsers.add_parser(
+        "path", help="print the location of config.toml"
+    )
     path.set_defaults(func=cmd_config_path)
 
     # collections / bands / evalscript
-    collections = subparsers.add_parser("collections", help="list predefined data collections")
+    collections = subparsers.add_parser(
+        "collections", help="list predefined data collections"
+    )
     collections.set_defaults(func=cmd_collections)
 
     bands = subparsers.add_parser("bands", help="list bands of a data collection")
     bands.add_argument("collection", help="e.g. SENTINEL2_L2A or sentinel-2-l2a")
     bands.set_defaults(func=cmd_bands)
 
-    evalscript = subparsers.add_parser("evalscript", help="generate an evalscript from band names")
+    evalscript = subparsers.add_parser(
+        "evalscript", help="generate an evalscript from band names"
+    )
     evalscript.add_argument("collection")
-    evalscript.add_argument("--bands", help="comma-separated bands (default: all bands)")
-    evalscript.add_argument("--meta-bands", help="comma-separated meta-bands, e.g. dataMask")
-    evalscript.add_argument("--merged-output", metavar="ID", help="merge bands into a single output with this ID")
-    evalscript.add_argument("--no-dn", action="store_true", help="do not prefer DN units")
+    evalscript.add_argument(
+        "--bands", help="comma-separated bands (default: all bands)"
+    )
+    evalscript.add_argument(
+        "--meta-bands", help="comma-separated meta-bands, e.g. dataMask"
+    )
+    evalscript.add_argument(
+        "--merged-output",
+        metavar="ID",
+        help="merge bands into a single output with this ID",
+    )
+    evalscript.add_argument(
+        "--no-dn", action="store_true", help="do not prefer DN units"
+    )
     evalscript.add_argument("-o", "--output", help="output file (default: stdout)")
     evalscript.set_defaults(func=cmd_evalscript)
 
@@ -443,21 +501,40 @@ def build_parser() -> argparse.ArgumentParser:
     search = subparsers.add_parser("search", help="search the catalog (STAC)")
     search.add_argument("collection")
     _add_area_args(search, required=False)
-    search.add_argument("--time", help="`START/END` or a single date, e.g. 2024-06-01/2024-06-30")
-    search.add_argument("--filter", help="CQL2 text filter, e.g. \"eo:cloud_cover < 20\"")
+    search.add_argument(
+        "--time", help="`START/END` or a single date, e.g. 2024-06-01/2024-06-30"
+    )
+    search.add_argument("--filter", help='CQL2 text filter, e.g. "eo:cloud_cover < 20"')
     search.add_argument("--ids", help="comma-separated feature IDs")
     search.add_argument("--max-results", type=int, help="stop after this many results")
-    search.add_argument("--format", choices=SEARCH_OUTPUTS, default="ids", help="output format (default: ids)")
+    search.add_argument(
+        "--format",
+        choices=SEARCH_OUTPUTS,
+        default="ids",
+        help="output format (default: ids)",
+    )
     search.add_argument("-o", "--output", help="output file (default: stdout)")
     search.set_defaults(func=cmd_search)
 
     # process
-    process = subparsers.add_parser("process", help="download processed imagery (Process API)")
+    process = subparsers.add_parser(
+        "process", help="download processed imagery (Process API)"
+    )
     process.add_argument("collection")
-    process.add_argument("-o", "--output", required=True, help="output file, e.g. image.tif")
+    process.add_argument(
+        "-o", "--output", required=True, help="output file, e.g. image.tif"
+    )
     process.add_argument("--time", help="`START/END` or a single date")
-    process.add_argument("--format", choices=PROCESS_FORMATS, help="response format (default: from --output)")
-    process.add_argument("--response-id", default="default", help="evalscript output ID (default: default)")
+    process.add_argument(
+        "--format",
+        choices=PROCESS_FORMATS,
+        help="response format (default: from --output)",
+    )
+    process.add_argument(
+        "--response-id",
+        default="default",
+        help="evalscript output ID (default: default)",
+    )
     process.add_argument("--progress", action="store_true", help="show a progress bar")
     _add_area_args(process, required=True)
     _add_output_size_args(process)
@@ -469,7 +546,9 @@ def build_parser() -> argparse.ArgumentParser:
     stats = subparsers.add_parser("stats", help="compute statistics (Statistical API)")
     stats.add_argument("collection")
     stats.add_argument("--time", required=True, help="`START/END`")
-    stats.add_argument("--interval", default="P1D", help="ISO 8601 aggregation interval (default: P1D)")
+    stats.add_argument(
+        "--interval", default="P1D", help="ISO 8601 aggregation interval (default: P1D)"
+    )
     stats.add_argument(
         "--last-interval", choices=[behavior.value for behavior in LastIntervalBehavior]
     )

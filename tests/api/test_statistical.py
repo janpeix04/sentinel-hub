@@ -120,9 +120,7 @@ def test_statistical_api_multiple_intervals() -> None:
             last_interval_behavior=LastIntervalBehavior.SHORTEN,
             size=(54, 60),
         ),
-        input_data=[
-            SHStatistical.input_data(DataCollection.SENTINEL2_L2A, maxcc=0.5)
-        ],
+        input_data=[SHStatistical.input_data(DataCollection.SENTINEL2_L2A, maxcc=0.5)],
         bbox=UTM_BBOX,
     )
 

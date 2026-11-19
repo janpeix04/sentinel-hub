@@ -31,11 +31,11 @@ File / response formats.
 ```python
 from sentinel_hub import MimeType
 
-MimeType.TIFF.extension                 # 'tiff'
-MimeType.TIFF.get_string()              # 'image/tiff'
-MimeType.from_string("image/png")       # MimeType.PNG  (also 'tif', 'jpeg', 'h5', ...)
-MimeType.has_value("jpg")               # True
-MimeType.PNG.is_image_format()          # True  (TIFF, PNG, JPG, JP2)
+MimeType.TIFF.extension  # 'tiff'
+MimeType.TIFF.get_string()  # 'image/tiff'
+MimeType.from_string("image/png")  # MimeType.PNG  (also 'tif', 'jpeg', 'h5', ...)
+MimeType.has_value("jpg")  # True
+MimeType.PNG.is_image_format()  # True  (TIFF, PNG, JPG, JP2)
 ```
 
 ## ResamplingType

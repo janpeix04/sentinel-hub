@@ -276,7 +276,7 @@ zero values.
 from sentinel_hub.data_collections_bands import Unit
 
 b04 = next(b for b in DataCollection.SENTINEL2_L2A.bands if b.name == "B04")
-b04.units         # (Unit.REFLECTANCE, Unit.DN)
+b04.units  # (Unit.REFLECTANCE, Unit.DN)
 b04.output_types  # (numpy.float32, numpy.uint16)
 ```
 

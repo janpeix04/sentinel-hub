@@ -44,7 +44,7 @@ request = SHRequest(
     size=(512, 856),
 )
 
-image = request.get_data()[0]   # numpy.ndarray, shape (856, 512, 3), dtype uint8
+image = request.get_data()[0]  # numpy.ndarray, shape (856, 512, 3), dtype uint8
 ```
 
 ## Anatomy of a request
@@ -69,6 +69,7 @@ inspect exactly what will be sent:
 
 ```python
 import json
+
 print(json.dumps(request.payload, indent=2))
 ```
 
@@ -79,9 +80,9 @@ print(json.dumps(request.payload, indent=2))
 ```python
 SHRequest.input_data(
     DataCollection.SENTINEL2_L2A,
-    identifier="s2",                         # needed for data fusion
+    identifier="s2",  # needed for data fusion
     time_interval=("2024-06-01", "2024-06-30"),
-    maxcc=0.3,                               # 0–1, sent as 30 (%)
+    maxcc=0.3,  # 0–1, sent as 30 (%)
     mosaicking_order=MosaickingOrder.LEAST_CC,
     upsampling=ResamplingType.BICUBIC,
     downsampling=ResamplingType.BILINEAR,
@@ -130,8 +131,12 @@ evalscript (`input: [{datasource: "l1c", ...}, {datasource: "l2a", ...}]`):
 
 ```python
 input_data = [
-    SHRequest.input_data(DataCollection.SENTINEL2_L1C, identifier="l1c", time_interval=ti),
-    SHRequest.input_data(DataCollection.SENTINEL2_L2A, identifier="l2a", time_interval=ti),
+    SHRequest.input_data(
+        DataCollection.SENTINEL2_L1C, identifier="l1c", time_interval=ti
+    ),
+    SHRequest.input_data(
+        DataCollection.SENTINEL2_L2A, identifier="l2a", time_interval=ti
+    ),
 ]
 ```
 
@@ -147,7 +152,10 @@ outside the polygon are masked out.
 from sentinel_hub import Geometry
 
 geometry = Geometry(
-    {"type": "Polygon", "coordinates": [[[13.4, 45.9], [13.5, 45.9], [13.5, 45.95], [13.4, 45.9]]]},
+    {
+        "type": "Polygon",
+        "coordinates": [[[13.4, 45.9], [13.5, 45.9], [13.5, 45.95], [13.4, 45.9]]],
+    },
     crs=CRS.WGS84,
 )
 SHRequest(..., geometry=geometry, size=(512, 512))
@@ -203,17 +211,19 @@ request = SHRequest(
     size=size,
 )
 data = request.get_data()[0]
-data["bands.tif"].shape    # (h, w, 2)
-data["dataMask.tif"]       # (h, w)
-data["userdata.json"]      # {"norm_factor": ...} – multiply DN values by this to get reflectance
+data["bands.tif"].shape  # (h, w, 2)
+data["dataMask.tif"]  # (h, w)
+data[
+    "userdata.json"
+]  # {"norm_factor": ...} – multiply DN values by this to get reflectance
 ```
 
 ## Getting and saving data
 
 ```python
-data = request.get_data()                       # download & decode
-data = request.get_data(save_data=True)         # also save to data_folder
-request.save_data()                             # only save, return nothing
+data = request.get_data()  # download & decode
+data = request.get_data(save_data=True)  # also save to data_folder
+request.save_data()  # only save, return nothing
 ```
 
 | Option (`get_data` / `save_data`) | Description |
@@ -233,8 +243,8 @@ URL and payload reads from disk instead of spending processing units.
 ```python
 request = SHRequest(..., data_folder="./data")
 request.get_data(save_data=True)  # downloads
-request.get_data()                # reads ./data/<hash>/response.tiff
-request.get_filename_list()       # ['<hash>/response.tiff']
+request.get_data()  # reads ./data/<hash>/response.tiff
+request.get_filename_list()  # ['<hash>/response.tiff']
 ```
 
 Other helpers: `get_download_list()`, `get_url_list()`, `is_valid_request()`.

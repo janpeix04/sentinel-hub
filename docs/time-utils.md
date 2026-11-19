@@ -30,10 +30,10 @@ Timestamps without a timezone are treated as **UTC** when sent to the API.
 ```python
 from sentinel_hub import parse_time
 
-parse_time("2024-06-15")                       # datetime.date(2024, 6, 15)
-parse_time("2024-06-15T10:30:00")              # datetime.datetime(2024, 6, 15, 10, 30)
+parse_time("2024-06-15")  # datetime.date(2024, 6, 15)
+parse_time("2024-06-15T10:30:00")  # datetime.datetime(2024, 6, 15, 10, 30)
 parse_time("2024-06-15", force_datetime=True)  # datetime.datetime(2024, 6, 15, 0, 0)
-parse_time(None, allow_undefined=True)         # None
+parse_time(None, allow_undefined=True)  # None
 parse_time("2024-06-15T10:30:00+02:00", ignoretz=True)  # extra kwargs go to dateutil
 ```
 
@@ -59,9 +59,9 @@ Turns `date` / `datetime` (or an iterable of them) into ISO 8601 strings. `None`
 ```python
 from sentinel_hub import serialize_time
 
-serialize_time(datetime(2024, 6, 15, 10, 30))               # '2024-06-15T10:30:00'
+serialize_time(datetime(2024, 6, 15, 10, 30))  # '2024-06-15T10:30:00'
 serialize_time(datetime(2024, 6, 15, 10, 30), use_tz=True)  # '2024-06-15T10:30:00Z'
-serialize_time((start, None), use_tz=True)                  # ('2024-06-01T00:00:00Z', '..')
+serialize_time((start, None), use_tz=True)  # ('2024-06-01T00:00:00Z', '..')
 ```
 
 With `use_tz=True`, naive datetimes are assumed UTC; plain `date` objects raise `ValueError`.
