@@ -3,6 +3,7 @@ from __future__ import annotations
 import pickle
 from typing import Any
 
+import numpy as np
 import pytest
 
 from sentinel_hub import DataCollection
@@ -149,6 +150,7 @@ def test_custom_collection_pickling() -> None:
         DataCollection.SENTINEL1_EW_SH_DES,
         DataCollection.SENTINEL3_OLCI,
         DataCollection.SENTINEL3_SLSTR,
+        DataCollection.SENTINEL5P,
     ],
 )
 @pytest.mark.parametrize(
@@ -266,10 +268,75 @@ def test_sentinel3_band_units(
     [
         DataCollection.SENTINEL2_L2A,
         DataCollection.SENTINEL1_IW,
+        DataCollection.SENTINEL5P,
     ],
 )
 def test_is_not_sentinel3(data_collection: DataCollection) -> None:
     assert not data_collection.is_sentinel3
+
+
+def test_sentinel5p_definition() -> None:
+    data_collection = DataCollection.SENTINEL5P
+
+    assert data_collection.api_id == "sentinel-5p-l2"
+    assert data_collection.catalog_id == "sentinel-5p-l2"
+    assert data_collection.service_url == DataCollection.SENTINEL2_L2A.service_url
+    assert data_collection.sensor_type == "TROPOMI"
+    assert data_collection.processing_level == "L2"
+    assert data_collection.has_cloud_coverage is False
+    assert data_collection.orbit_direction is None
+    assert data_collection.is_sentinel5p
+
+    assert [band.name for band in data_collection.bands] == [
+        "CO",
+        "HCHO",
+        "NO2",
+        "O3",
+        "SO2",
+        "CH4",
+        "AER_AI_340_380",
+        "AER_AI_354_388",
+        "CLOUD_BASE_PRESSURE",
+        "CLOUD_TOP_PRESSURE",
+        "CLOUD_BASE_HEIGHT",
+        "CLOUD_TOP_HEIGHT",
+        "CLOUD_OPTICAL_THICKNESS",
+        "CLOUD_FRACTION",
+    ]
+    assert [band.name for band in data_collection.metabands] == ["dataMask"]
+
+
+@pytest.mark.parametrize(
+    ("band_name", "unit"),
+    [
+        ("CO", Unit.MOL_M2),
+        ("NO2", Unit.MOL_M2),
+        ("CH4", Unit.PPB),
+        ("AER_AI_354_388", Unit.INDEX),
+        ("CLOUD_TOP_PRESSURE", Unit.PASCALS),
+        ("CLOUD_BASE_HEIGHT", Unit.METERS),
+        ("CLOUD_OPTICAL_THICKNESS", Unit.OPTICAL_DEPTH),
+        ("CLOUD_FRACTION", Unit.FRACTION),
+    ],
+)
+def test_sentinel5p_band_units(band_name: str, unit: Unit) -> None:
+    band = next(
+        band for band in DataCollection.SENTINEL5P.bands if band.name == band_name
+    )
+    assert band.units == (unit,)
+    assert band.output_types == (np.float32,)
+
+
+@pytest.mark.parametrize(
+    "data_collection",
+    [
+        DataCollection.SENTINEL2_L2A,
+        DataCollection.SENTINEL1_IW,
+        DataCollection.SENTINEL3_OLCI,
+    ],
+)
+def test_is_not_sentinel5p(data_collection: DataCollection) -> None:
+    assert not data_collection.is_sentinel5p
 
 
 @pytest.mark.parametrize(
@@ -387,6 +454,7 @@ def test_sentinel1_collections_are_distinct() -> None:
         DataCollection.SENTINEL2_L2A,
         DataCollection.SENTINEL3_OLCI,
         DataCollection.SENTINEL3_SLSTR,
+        DataCollection.SENTINEL5P,
     ],
 )
 def test_is_not_sentinel1(data_collection: DataCollection) -> None:

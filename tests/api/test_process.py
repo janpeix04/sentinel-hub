@@ -714,6 +714,27 @@ def test_input_data_sentinel3_slstr_filters() -> None:
     }
 
 
+def test_input_data_sentinel5p() -> None:
+    input_data = SHRequest.input_data(
+        data_collection=DataCollection.SENTINEL5P,
+        time_interval=("2024-06-01", "2024-06-01"),
+        other_args={
+            "dataFilter": {"timeliness": "OFFL"},
+            "processing": {"minQa": 75},
+        },
+    )
+
+    assert input_data.service_url == DataCollection.SENTINEL5P.service_url
+    assert {**input_data} == {
+        "type": "sentinel-5p-l2",
+        "dataFilter": {
+            "timeRange": {"from": "2024-06-01T00:00:00Z", "to": "2024-06-01T23:59:59Z"},
+            "timeliness": "OFFL",
+        },
+        "processing": {"minQa": 75},
+    }
+
+
 @pytest.mark.parametrize("maxcc", [-0.1, 1.1])
 def test_input_data_invalid_maxcc(maxcc: float) -> None:
     with pytest.raises(ValueError):

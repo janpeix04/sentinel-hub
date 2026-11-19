@@ -13,6 +13,7 @@ from sentinel_hub import DataCollection, generate_evalscript
         DataCollection.SENTINEL1_IW,
         DataCollection.SENTINEL3_OLCI,
         DataCollection.SENTINEL3_SLSTR,
+        DataCollection.SENTINEL5P,
     ],
 )
 def test_collection_bands(data_collection: DataCollection) -> None:
@@ -136,6 +137,18 @@ def test_sentinel3_units() -> None:
     assert 'units: ["REFLECTANCE", "REFLECTANCE", "BRIGHTNESS_TEMPERATURE", "DN"]' in (
         evalscript
     )
+    assert evalscript.count('"FLOAT32"') == 3
+    assert evalscript.count('"UINT8"') == 1
+
+
+def test_sentinel5p_units() -> None:
+    evalscript = generate_evalscript(
+        data_collection=DataCollection.SENTINEL5P,
+        bands=["NO2", "CH4", "CLOUD_FRACTION"],
+        meta_bands=["dataMask"],
+    )
+
+    assert 'units: ["MOL_M2", "PPB", "FRACTION", "DN"]' in evalscript
     assert evalscript.count('"FLOAT32"') == 3
     assert evalscript.count('"UINT8"') == 1
 
