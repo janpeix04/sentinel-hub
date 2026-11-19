@@ -186,7 +186,7 @@ class CRSMeta(EnumMeta):
             crs_name = f"EPSG_{crs_value}"
             extend_enum(cls, crs_name, crs_value)
 
-        return super().__class__(crs_value, *args, **kwargs)
+        return super().__call__(crs_value, *args, **kwargs)
 
     @staticmethod
     def _parse_crs(value: object) -> object:
@@ -333,7 +333,7 @@ class CRS(Enum, metaclass=CRSMeta):
     @staticmethod
     def get_utm_from_wgs84(lng: float, lat: float) -> CRS:
         """Convert from WGS84 to UTM coordinate system."""
-        _, _, zone = utm.from_latlon(lat, lng)
+        _, _, zone, _ = utm.from_latlon(lat, lng)
         direction = "N" if lat >= 0 else "S"
         return CRS[f"UTM_{zone}{direction}"]
 
