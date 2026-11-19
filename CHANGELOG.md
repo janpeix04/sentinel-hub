@@ -18,8 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are sent as Process / Statistical API `dataFilter` entries; `OrbitDirection` enum,
   `DataCollection.is_sentinel1` and `contains_orbit_direction`. Documented in
   `docs/data-collections.md`.
-- **Sentinel-3** – `DataCollection.SENTINEL3_OLCI` and `SENTINEL3_SLSTR` (L1B) with band and
-  metaband specs, and `DataCollection.is_sentinel3`.
+- **Sentinel-3** – `DataCollection.SENTINEL3_OLCI` and `SENTINEL3_SLSTR` (L1B) and
+  `SENTINEL3_OLCI_L2`, `SENTINEL3_SLSTR_L2` and `SENTINEL3_SYNERGY_L2` (L2) with band and
+  metaband specs, and `DataCollection.is_sentinel3`. New `Unit` members for the L2
+  products: `GRAMS_CM2`, `ATMCM`, `LOG10_1_M`, `LOG10_GRAMS_M2`, `LOG10_MILLIGRAMS_M3`,
+  `MICROEINSTEINS_S_M2` and `ANGSTROM_EXPONENT`.
+- **Sentinel-5P** – `DataCollection.SENTINEL5P` (TROPOMI L2) with trace-gas, aerosol and
+  cloud bands, and `DataCollection.is_sentinel5p`.
 
 ### Changed
 

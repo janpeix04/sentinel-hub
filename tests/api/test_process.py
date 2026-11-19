@@ -683,6 +683,9 @@ def test_input_data_sentinel1_with_other_filters() -> None:
     [
         (DataCollection.SENTINEL3_OLCI, "sentinel-3-olci"),
         (DataCollection.SENTINEL3_SLSTR, "sentinel-3-slstr"),
+        (DataCollection.SENTINEL3_OLCI_L2, "sentinel-3-olci-l2"),
+        (DataCollection.SENTINEL3_SLSTR_L2, "sentinel-3-slstr-l2"),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "sentinel-3-synergy-l2"),
     ],
 )
 def test_input_data_sentinel3(data_collection: DataCollection, api_id: str) -> None:
@@ -711,6 +714,27 @@ def test_input_data_sentinel3_slstr_filters() -> None:
             "orbitDirection": "DESCENDING",
             "view": "OBLIQUE",
         },
+    }
+
+
+def test_input_data_sentinel5p() -> None:
+    input_data = SHRequest.input_data(
+        data_collection=DataCollection.SENTINEL5P,
+        time_interval=("2024-06-01", "2024-06-01"),
+        other_args={
+            "dataFilter": {"timeliness": "OFFL"},
+            "processing": {"minQa": 75},
+        },
+    )
+
+    assert input_data.service_url == DataCollection.SENTINEL5P.service_url
+    assert {**input_data} == {
+        "type": "sentinel-5p-l2",
+        "dataFilter": {
+            "timeRange": {"from": "2024-06-01T00:00:00Z", "to": "2024-06-01T23:59:59Z"},
+            "timeliness": "OFFL",
+        },
+        "processing": {"minQa": 75},
     }
 
 

@@ -19,6 +19,10 @@ Collections are members of the `DataCollection` enum.
 | `DataCollection.SENTINEL1` and variants (see below) | `sentinel-1-grd` | GRD (Ground Range Detected SAR) | |
 | `DataCollection.SENTINEL3_OLCI` | `sentinel-3-olci` | L1B (top-of-atmosphere, 300 m) | |
 | `DataCollection.SENTINEL3_SLSTR` | `sentinel-3-slstr` | L1B (top-of-atmosphere, 500 m / 1 km) | ✅ |
+| `DataCollection.SENTINEL3_OLCI_L2` | `sentinel-3-olci-l2` | L2 (land and water products, 300 m) | ✅ |
+| `DataCollection.SENTINEL3_SLSTR_L2` | `sentinel-3-slstr-l2` | L2 (land surface temperature, 1 km) | ✅ |
+| `DataCollection.SENTINEL3_SYNERGY_L2` | `sentinel-3-synergy-l2` | L2 (OLCI + SLSTR surface reflectance) | |
+| `DataCollection.SENTINEL5P` | `sentinel-5p-l2` | L2 (atmospheric trace gases, aerosols, clouds) | |
 
 All point at the CDSE Sentinel Hub service (`ServiceUrl.CDSE`).
 
@@ -28,7 +32,8 @@ from sentinel_hub import DataCollection
 DataCollection.get_available_collections()
 # [<DataCollection.SENTINEL2_L1C: ...>, <DataCollection.SENTINEL2_L2A: ...>,
 #  <DataCollection.SENTINEL1: ...>, <DataCollection.SENTINEL1_IW: ...>, ...,
-#  <DataCollection.SENTINEL3_OLCI: ...>, <DataCollection.SENTINEL3_SLSTR: ...>]
+#  <DataCollection.SENTINEL3_OLCI: ...>, <DataCollection.SENTINEL3_SLSTR: ...>, ...,
+#  <DataCollection.SENTINEL5P: ...>]
 ```
 
 ### Sentinel-1 GRD
@@ -64,9 +69,12 @@ Processing options such as `backCoeff`, `orthorectify`, `demInstance` or `speckl
 are set per request, not on the collection. Pass them through `other_args`
 (see [Process API](process-api.md#input-data)).
 
-### Sentinel-3 OLCI and SLSTR
+### Sentinel-3
 
-Both are Level-1B products: top-of-atmosphere values with no atmospheric correction.
+Sentinel-3 has Level-1B collections (top-of-atmosphere values, no atmospheric correction) and
+Level-2 collections (derived geophysical products).
+
+**Level-1B**
 
 - **OLCI** ([CDSE S3OLCI docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3OLCI.html))
   is a 21-band ocean and land colour imager at 300 m. It has no cloud-cover filter, so `maxcc` does
@@ -90,6 +98,46 @@ SHRequest.input_data(
     slstr_day, maxcc=0.2, other_args={"dataFilter": {"view": "OBLIQUE"}}
 )
 ```
+
+**Level-2**
+
+- **OLCI L2** ([CDSE S3OLCIL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3OLCIL2.html))
+  has land products (FAPAR, OTCI chlorophyll index, rectified reflectance) and water products
+  (chlorophyll, suspended matter, PAR, aerosols), plus surface reflectance `B01`–`B21`.
+  `B13`, `B14`, `B15`, `B19` and `B20` are not available. It supports `maxcc` and
+  `MosaickingOrder.LEAST_CC`.
+- **SLSTR L2** ([CDSE S3SLSTRL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3SLSTRL2.html))
+  has land surface temperature (`LST`) with its uncertainty, `NDVI`, and the cloud and quality
+  bitmasks. It supports `maxcc`, `MosaickingOrder.LEAST_CC` and `orbit_direction`. LST comes
+  from thermal bands, so both day and night passes are usable.
+- **SYN L2** ([CDSE S3SYNL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3SYNL2.html))
+  combines OLCI and SLSTR into surface reflectance (`SY_2_SYN`). The same collection also
+  serves the 1 km vegetation products: 10-day composites (`*_V10`) and 1-day composites
+  (`*_VG1`). You pick the product by the band names in your evalscript. There is no
+  cloud-cover filter.
+
+### Sentinel-5P L2
+
+TROPOMI Level-2 products: trace-gas columns, aerosol indices and cloud properties
+([CDSE S5PL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S5PL2.html)).
+There is no cloud-cover filter, so `maxcc` does not apply. Pass these options through
+`other_args`:
+
+- **`timeliness`** (`dataFilter`): `NRTI` (near real-time), `OFFL` (offline) or `RPRO`
+  (reprocessed). If unset, the service prefers `RPRO`, then `OFFL`, then `NRTI`.
+- **`minQa`** (`processing`): minimum `qa_value` in percent (0–100). Pixels below it are
+  masked out. The default is 75 for `NO2` and 50 for the other products.
+
+```python
+SHRequest.input_data(
+    DataCollection.SENTINEL5P,
+    time_interval=("2024-06-01", "2024-06-01"),
+    other_args={"dataFilter": {"timeliness": "OFFL"}, "processing": {"minQa": 75}},
+)
+```
+
+With the default simple mosaicking, the service only uses data from the 24 hours before the
+end of `time_interval`.
 
 ## Inspecting a collection
 
@@ -150,7 +198,7 @@ on the collection variant (see [Sentinel-1 GRD](#sentinel-1-grd)).
 | `shadowMask` | `DN` | `uint8` | `backCoeff: GAMMA0_TERRAIN` |
 | `dataMask` | `DN` | `bool` | – |
 
-**Sentinel-3 bands** – all `float32`:
+**Sentinel-3 L1B bands** – all `float32`:
 
 | Collection | Bands | Units (default first) |
 |---|---|---|
@@ -158,7 +206,7 @@ on the collection variant (see [Sentinel-1 GRD](#sentinel-1-grd)).
 | SLSTR | `S1 S2 S3 S4 S5 S6` (optical) | `REFLECTANCE` / `RADIANCE` |
 | SLSTR | `S7 S8 S9 F1 F2` (thermal) | `BRIGHTNESS_TEMPERATURE` (kelvin) |
 
-**Sentinel-3 metabands:**
+**Sentinel-3 L1B metabands:**
 
 | Metaband | Unit | Output type | OLCI | SLSTR |
 |---|---|---|---|---|
@@ -169,8 +217,60 @@ on the collection variant (see [Sentinel-1 GRD](#sentinel-1-grd)).
 | `QUALITY_FLAGS` (bit-packed) | `DN` | `uint32` | ✅ | |
 | `dataMask` | `DN` | `bool` | ✅ | ✅ |
 
+**Sentinel-3 L2 bands** – all `float32`, one unit each:
+
+| Collection | Bands | Unit |
+|---|---|---|
+| OLCI L2 | `GIFAPAR` (green FAPAR) | `FRACTION` |
+| OLCI L2 | `IWV_L`, `IWV_W` (water vapour, land / water) | `KG_M2` |
+| OLCI L2 | `OTCI` (terrestrial chlorophyll index) | `INDEX` |
+| OLCI L2 | `RC681`, `RC865` (rectified reflectance), `B01`–`B12`, `B16`–`B18`, `B21` | `REFLECTANCE` |
+| OLCI L2 | `CHL_OC4ME`, `CHL_NN` (algal pigment, log10 mg/m³) | `LOG10_MILLIGRAMS_M3` |
+| OLCI L2 | `TSM_NN` (total suspended matter, log10 g/m³) | `LOG10_GRAMS_M2` |
+| OLCI L2 | `PAR` (photosynthetically active radiation) | `MICROEINSTEINS_S_M2` |
+| OLCI L2 | `KD490_M07`, `ADG443_NN` (attenuation / CDM absorption, log10 1/m) | `LOG10_1_M` |
+| OLCI L2 | `A865` (aerosol Ångström exponent) | `ANGSTROM_EXPONENT` |
+| OLCI L2 | `T865` (aerosol optical thickness) | `OPTICAL_DEPTH` |
+| SLSTR L2 | `LST`, `LST_uncertainty` | `KELVIN` |
+| SLSTR L2 | `NDVI` | `INDEX` |
+| SYN L2 | `B01`–`B12`, `B16`–`B18`, `B21`, `S1`–`S3`, `S5`, `S6` | `REFLECTANCE` |
+| SYN L2 | `B0`, `B2`, `B3`, `MIR` (`_V10` / `_VG1`) | `REFLECTANCE` |
+| SYN L2 | `NDVI` (`_V10` / `_VG1`), `TOA_NDVI_VG1` | `INDEX` |
+| SYN L2 | `OG` (ozone, `_V10` / `_VG1`) | `ATMCM` |
+| SYN L2 | `WVG` (water vapour, `_V10` / `_VG1`) | `GRAMS_CM2` |
+| SYN L2 | `AG` (aerosol optical thickness, `_V10` / `_VG1`) | `OPTICAL_DEPTH` |
+
+`LOG10_GRAMS_M2` is the unit name the API uses for `TSM_NN`, even though the quantity is
+per m³.
+
+**Sentinel-3 L2 metabands:**
+
+| Metaband | Unit | Output type | Collection |
+|---|---|---|---|
+| `LQSF` (land quality and science flags) | `DN` | `uint32` | OLCI L2 |
+| `CLOUD`, `CONFIDENCE` (bitmasks) | `DN` | `uint16` | SLSTR L2 |
+| `BAYES`, `POINTING` (bitmasks) | `DN` | `uint8` | SLSTR L2 |
+| `SAA`, `SZA`, `VAA`, `VZA` (`_V10` / `_VG1`) | `DEGREES` | `float32` | SYN L2 |
+| `dataMask` | `DN` | `bool` | all |
+
 The Process API has no 32-bit integer output type, so `generate_evalscript` rejects
-`QUALITY_FLAGS`. Decode it in a custom evalscript with `decodeS3OLCIQualityFlags` instead.
+`QUALITY_FLAGS` and `LQSF`. Decode them in a custom evalscript instead (for
+`QUALITY_FLAGS`, use `decodeS3OLCIQualityFlags`).
+
+**Sentinel-5P bands** – all `float32`, one unit each:
+
+| Bands | Unit | Quantity |
+|---|---|---|
+| `CO`, `HCHO`, `NO2`, `O3`, `SO2` | `MOL_M2` | Column density (mol/m²); `HCHO` and `NO2` are tropospheric |
+| `CH4` | `PPB` | Column-averaged dry-air mixing ratio |
+| `AER_AI_340_380`, `AER_AI_354_388` | `INDEX` | UV aerosol index |
+| `CLOUD_BASE_PRESSURE`, `CLOUD_TOP_PRESSURE` | `PASCALS` | Cloud pressure |
+| `CLOUD_BASE_HEIGHT`, `CLOUD_TOP_HEIGHT` | `METERS` | Cloud height |
+| `CLOUD_OPTICAL_THICKNESS` | `OPTICAL_DEPTH` | Cloud optical thickness |
+| `CLOUD_FRACTION` | `FRACTION` | Effective radiometric cloud fraction |
+
+The only metaband is `dataMask` (`DN`, `bool`). Use it to tell no-data pixels apart from real
+zero values.
 
 ```python
 from sentinel_hub.data_collections_bands import Unit
@@ -225,7 +325,7 @@ Rules:
 | `swath_mode` | Sentinel-1 only: `dataFilter.acquisitionMode` – `IW`, `EW`, `SM`, `WV` |
 | `polarization` | Sentinel-1 only: `dataFilter.polarization` – `DV`, `DH`, `SV`, `SH`, `HH`, `HV`, `VV`, `VH` |
 | `resolution` | Sentinel-1 only: `dataFilter.resolution` – `HIGH`, `MEDIUM` |
-| `orbit_direction` | `dataFilter.orbitDirection` – `ASCENDING`, `DESCENDING`; `BOTH` adds no filter (see `OrbitDirection`). Supported by Sentinel-1 and SLSTR |
+| `orbit_direction` | `dataFilter.orbitDirection` – `ASCENDING`, `DESCENDING`; `BOTH` adds no filter (see `OrbitDirection`). Supported by Sentinel-1, SLSTR and SLSTR L2 |
 | `bands`, `metabands` | Tuples of `Band` |
 | `has_cloud_coverage` | Whether `maxcc` filtering makes sense |
 
@@ -238,6 +338,7 @@ Sentinel-1 (`collection.is_sentinel1`). `orbit_direction` is sent for any collec
 | `collection.define_from(name, **params)` | Derive a new collection |
 | `collection.is_sentinel1` | `True` for Sentinel-1 collections |
 | `collection.is_sentinel3` | `True` for Sentinel-3 collections |
+| `collection.is_sentinel5p` | `True` for Sentinel-5P collections |
 | `collection.contains_orbit_direction(direction)` | Whether the collection includes acquisitions in that orbit direction |
 | `DataCollection.get_available_collections()` | List all members, including custom ones |
 | `collection.value` | The underlying `DataCollectionDefinition` |

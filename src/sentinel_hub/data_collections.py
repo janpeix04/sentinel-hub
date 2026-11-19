@@ -18,6 +18,7 @@ class _CollectionType:
     SENTINEL1 = "Sentinel-1"
     SENTINEL2 = "Sentinel-2"
     SENTINEL3 = "Sentinel-3"
+    SENTINEL5P = "Sentinel-5P"
 
 
 class _SensorType:
@@ -27,6 +28,8 @@ class _SensorType:
     MSI = "MSI"
     OLCI = "OLCI"
     SLSTR = "SLSTR"
+    SYNERGY = "OLCI-SLSTR"
+    TROPOMI = "TROPOMI"
 
 
 class _ProcessingLevel:
@@ -35,6 +38,7 @@ class _ProcessingLevel:
     GRD = "GRD"
     L1B = "L1B"
     L1C = "L1C"
+    L2 = "L2"
     L2A = "L2A"
 
 
@@ -256,6 +260,41 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         metabands=MetaBands.SENTINEL3_SLSTR,
         has_cloud_coverage=True,
     )
+    SENTINEL3_OLCI_L2 = SENTINEL3_OLCI.derive(
+        api_id="sentinel-3-olci-l2",
+        catalog_id="sentinel-3-olci-l2",
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL3_OLCI_L2,
+        metabands=MetaBands.SENTINEL3_OLCI_L2,
+        has_cloud_coverage=True,
+    )
+    SENTINEL3_SLSTR_L2 = SENTINEL3_SLSTR.derive(
+        api_id="sentinel-3-slstr-l2",
+        catalog_id="sentinel-3-slstr-l2",
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL3_SLSTR_L2,
+        metabands=MetaBands.SENTINEL3_SLSTR_L2,
+    )
+    SENTINEL3_SYNERGY_L2 = DataCollectionDefinition(
+        api_id="sentinel-3-synergy-l2",
+        catalog_id="sentinel-3-synergy-l2",
+        service_url=ServiceUrl.CDSE,
+        collection_type=_CollectionType.SENTINEL3,
+        sensor_type=_SensorType.SYNERGY,
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL3_SYNERGY_L2,
+        metabands=MetaBands.SENTINEL3_SYNERGY_L2,
+    )
+    SENTINEL5P = DataCollectionDefinition(
+        api_id="sentinel-5p-l2",
+        catalog_id="sentinel-5p-l2",
+        service_url=ServiceUrl.CDSE,
+        collection_type=_CollectionType.SENTINEL5P,
+        sensor_type=_SensorType.TROPOMI,
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL5P,
+        metabands=MetaBands.SENTINEL5P,
+    )
 
     @classmethod
     def define(
@@ -402,6 +441,11 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
     def is_sentinel3(self) -> bool:
         """Checks if data collection is a Sentinel-3 collection type."""
         return self.collection_type == _CollectionType.SENTINEL3
+
+    @property
+    def is_sentinel5p(self) -> bool:
+        """Checks if data collection is a Sentinel-5P collection type."""
+        return self.collection_type == _CollectionType.SENTINEL5P
 
     def contains_orbit_direction(self, orbit_direction: str) -> bool:
         """Checks if a data collection contains given orbit direction."""
