@@ -13,6 +13,9 @@ from sentinel_hub import DataCollection, generate_evalscript
         DataCollection.SENTINEL1_IW,
         DataCollection.SENTINEL3_OLCI,
         DataCollection.SENTINEL3_SLSTR,
+        DataCollection.SENTINEL3_OLCI_L2,
+        DataCollection.SENTINEL3_SLSTR_L2,
+        DataCollection.SENTINEL3_SYNERGY_L2,
         DataCollection.SENTINEL5P,
     ],
 )
@@ -153,12 +156,33 @@ def test_sentinel5p_units() -> None:
     assert evalscript.count('"UINT8"') == 1
 
 
-def test_band_without_sample_type() -> None:
-    with pytest.raises(ValueError, match="QUALITY_FLAGS"):
+def test_sentinel3_l2_flag_sample_types() -> None:
+    evalscript = generate_evalscript(
+        data_collection=DataCollection.SENTINEL3_SLSTR_L2,
+        bands=["LST"],
+        meta_bands=["CLOUD", "BAYES"],
+    )
+
+    assert 'units: ["KELVIN", "DN", "DN"]' in evalscript
+    assert '{id: "CLOUD", bands: 1, sampleType: "UINT16"}' in evalscript
+    assert '{id: "BAYES", bands: 1, sampleType: "UINT8"}' in evalscript
+
+
+@pytest.mark.parametrize(
+    ("data_collection", "meta_band"),
+    [
+        (DataCollection.SENTINEL3_OLCI, "QUALITY_FLAGS"),
+        (DataCollection.SENTINEL3_OLCI_L2, "LQSF"),
+    ],
+)
+def test_band_without_sample_type(
+    data_collection: DataCollection, meta_band: str
+) -> None:
+    with pytest.raises(ValueError, match=meta_band):
         generate_evalscript(
-            data_collection=DataCollection.SENTINEL3_OLCI,
+            data_collection=data_collection,
             bands=["B08"],
-            meta_bands=["QUALITY_FLAGS"],
+            meta_bands=[meta_band],
         )
 
 

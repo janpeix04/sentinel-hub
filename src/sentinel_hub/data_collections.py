@@ -28,6 +28,7 @@ class _SensorType:
     MSI = "MSI"
     OLCI = "OLCI"
     SLSTR = "SLSTR"
+    SYNERGY = "OLCI-SLSTR"
     TROPOMI = "TROPOMI"
 
 
@@ -258,6 +259,31 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         bands=Bands.SENTINEL3_SLSTR,
         metabands=MetaBands.SENTINEL3_SLSTR,
         has_cloud_coverage=True,
+    )
+    SENTINEL3_OLCI_L2 = SENTINEL3_OLCI.derive(
+        api_id="sentinel-3-olci-l2",
+        catalog_id="sentinel-3-olci-l2",
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL3_OLCI_L2,
+        metabands=MetaBands.SENTINEL3_OLCI_L2,
+        has_cloud_coverage=True,
+    )
+    SENTINEL3_SLSTR_L2 = SENTINEL3_SLSTR.derive(
+        api_id="sentinel-3-slstr-l2",
+        catalog_id="sentinel-3-slstr-l2",
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL3_SLSTR_L2,
+        metabands=MetaBands.SENTINEL3_SLSTR_L2,
+    )
+    SENTINEL3_SYNERGY_L2 = DataCollectionDefinition(
+        api_id="sentinel-3-synergy-l2",
+        catalog_id="sentinel-3-synergy-l2",
+        service_url=ServiceUrl.CDSE,
+        collection_type=_CollectionType.SENTINEL3,
+        sensor_type=_SensorType.SYNERGY,
+        processing_level=_ProcessingLevel.L2,
+        bands=Bands.SENTINEL3_SYNERGY_L2,
+        metabands=MetaBands.SENTINEL3_SYNERGY_L2,
     )
     SENTINEL5P = DataCollectionDefinition(
         api_id="sentinel-5p-l2",
