@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import json
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -272,3 +274,40 @@ def test_handling_of_unclosed_memory(
 
     thread1.join()
     thread2.join()
+
+
+def test_token_info_with_url_safe_characters() -> None:
+    payload = {"azp": "sh-py-test", "name": "~~~???>>>", "other": "?>?>"}
+    encoded_payload = (
+        base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+    )
+    assert "-" in encoded_payload or "_" in encoded_payload
+
+    token = {
+        "access_token": f"header.{encoded_payload}.signature",
+        "expires_at": time.time() + 1000,
+    }
+    session = SHSession.from_token(token)
+
+    assert session.info() == payload
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="On Windows a shared memory block is destroyed once its last handle is closed, so sharing does not work",
+)
+def test_session_sharing_with_growing_token(
+    fake_token: JsonDict, fake_config: SHConfig
+) -> None:
+    session = SHSession(config=fake_config, refresh_before_expiry=0, _token=fake_token)
+    thread = SessionSharingThread(session, memory_name="growing-token")
+    thread.start()
+
+    try:
+        larger_token = {**fake_token, "access_token": "x" * 10_000}
+        thread._share_token(larger_token)
+
+        collected_session = collect_shared_session(memory_name="growing-token")
+        assert collected_session.token == larger_token
+    finally:
+        thread.join()
