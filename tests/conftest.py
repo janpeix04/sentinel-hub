@@ -64,6 +64,15 @@ def input_folder_fixture() -> str:
     return INPUT_FOLDER
 
 
+@pytest.fixture(name="config")
+def config_fixture() -> SHConfig:
+    return SHConfig(
+        use_defaults=True,
+        sh_client_id=REAL_CLIENT_ID,
+        sh_client_secret=REAL_CLIENT_SECRET,
+    )
+
+
 @pytest.fixture(name="session", scope="session")
 def session_fixture() -> SHSession:
     return SHSession(
