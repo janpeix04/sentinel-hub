@@ -86,9 +86,13 @@ def generate_evalscript(
             if (prioritize_dn and Unit.DN in band.units)
             else 0
         )
-        sample_type_map[band.name] = DTYPE_TO_SAMPLE_TYPE[
-            band.output_types[unit_choice_idx]
-        ]
+        output_type = band.output_types[unit_choice_idx]
+        if output_type not in DTYPE_TO_SAMPLE_TYPE:
+            raise ValueError(
+                f"Band {band.name} has output type {output_type.__name__}, which has no "
+                "matching Process API sample type. Write a custom evalscript for it."
+            )
+        sample_type_map[band.name] = DTYPE_TO_SAMPLE_TYPE[output_type]
         input_names.append(f'"{band.name}"')
         input_units.append(f'"{band.units[unit_choice_idx].value}"')
 
