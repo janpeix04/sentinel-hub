@@ -11,7 +11,7 @@ from sentinel_hub import (
     SHSession,
     __version__,
 )
-from sentinel_hub.exception import OutOfRequestsException
+from sentinel_hub.exception import OutOfRequestsException, SHRateLimitWarning
 
 FAST_SH_ENDPOINT = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/collections"
 
@@ -112,5 +112,8 @@ def test_client_with_max_retries(session: SHSession) -> None:
             self.status_code = requests.status_codes.codes.TOO_MANY_REQUESTS
 
     client._do_download = lambda _: MockResponse()
-    with pytest.raises(OutOfRequestsException):
+    with (
+        pytest.warns(SHRateLimitWarning),
+        pytest.raises(OutOfRequestsException),
+    ):
         client.download(download_requests=[DownloadRequest()])
