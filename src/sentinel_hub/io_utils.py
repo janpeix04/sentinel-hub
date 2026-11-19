@@ -44,7 +44,7 @@ def read_data(filename: str, data_format: MimeType | None = None) -> Any:
     except BaseException:
         # In case a procedure would read a lot of files and one would be
         # corrupt this helps us figure out which one.
-        logger.debug("Filed to read from file: %s", filename)
+        logger.debug("Failed to read from file: %s", filename)
         raise
 
 
@@ -139,7 +139,7 @@ def write_data(
         with open(filename, "w") as file:
             json.dump(data, file, indent=4, sort_keys=True)
     else:
-        raise ValueError(f"Writting data format {data_format} is not supported.")
+        raise ValueError(f"Writing data format {data_format} is not supported.")
 
 
 def _create_parent_folder(filename: str) -> None:

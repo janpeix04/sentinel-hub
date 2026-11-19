@@ -10,7 +10,7 @@ from requests import Response
 
 from sentinel_hub.config import SHConfig
 from sentinel_hub.constants import SHConstants
-from sentinel_hub.download.client import DownloadClient
+from sentinel_hub.download.client import DownloadClient, get_http_session
 from sentinel_hub.download.handlers import fail_user_errors, retry_temporary_errors
 from sentinel_hub.download.models import DownloadRequest, DownloadResponse
 from sentinel_hub.download.rate_limit import SHRateLimit
@@ -79,12 +79,13 @@ class SHDownloadClient(DownloadClient):
 
             if sleep_time == 0:
                 download_attempts += 1
-                logger.debug(
-                    "Sending %s request to %s. Hash of sent request is %s.",
-                    request.request_type.value,
-                    request.url,
-                    request.get_hashed_name(),
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "Sending %s request to %s. Hash of sent request is %s.",
+                        request.request_type.value,
+                        request.url,
+                        request.get_hashed_name(),
+                    )
                 response = self._do_download(request)
 
                 if (
@@ -135,7 +136,7 @@ class SHDownloadClient(DownloadClient):
         if request.url is None:
             raise ValueError(f"Faulty request {request}, no URL specified.")
 
-        return requests.request(
+        return get_http_session().request(
             request.request_type.value,
             url=request.url,
             json=request.post_values,

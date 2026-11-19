@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 import warnings
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -24,6 +25,19 @@ from sentinel_hub.io_utils import read_data
 from sentinel_hub.types import JsonDict
 
 logger = logging.getLogger(__name__)
+
+_thread_local = threading.local()
+
+
+def get_http_session() -> requests.Session:
+    """
+    Provides a `requests.Session` bound to the current thread, so that HTTP
+    connections are reused between requests instead of opened anew each time.
+    """
+    session = getattr(_thread_local, "session", None)
+    if session is None:
+        session = _thread_local.session = requests.Session()
+    return session
 
 
 class DownloadClient:
@@ -134,14 +148,15 @@ class DownloadClient:
         if request.url is None:
             raise ValueError(f"Faulty request {request}, no URL specified.")
 
-        logger.debug(
-            "Sending %s request to %s. Hash of sent request is %s.",
-            request.request_type.value,
-            request.url,
-            request.get_hashed_name(),
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "Sending %s request to %s. Hash of sent request is %s.",
+                request.request_type.value,
+                request.url,
+                request.get_hashed_name(),
+            )
 
-        response = requests.request(
+        response = get_http_session().request(
             request.request_type.value,
             url=request.url,
             json=request.post_values,
@@ -169,8 +184,8 @@ class DownloadClient:
         cached_request_info = read_data(request_path, MimeType.JSON)
         cached_request_info = cached_request_info.get("request", cached_request_info)
 
-        del cached_request_info["timestamp"]
-        del cached_request_info["headers"]
+        cached_request_info.pop("timestamp", None)
+        cached_request_info.pop("headers", None)
 
         current_request_info = request.get_request_params(include_metadata=False)
         current_request_info_json = json.loads(json.dumps(current_request_info))
@@ -179,7 +194,7 @@ class DownloadClient:
             raise HashedNameCollisionException(
                 f"Request has hashed name {request.get_hashed_name()}, "
                 f"which matches request saved at {request_path}, but the "
-                "requests are differnt. Possible hash collision."
+                "requests are different. Possible hash collision."
             )
 
     def get_json(
