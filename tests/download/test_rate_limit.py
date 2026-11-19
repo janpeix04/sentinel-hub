@@ -23,7 +23,7 @@ def test_wait_time_is_capped() -> None:
     assert rate_limit.wait_time == 5
 
 
-@pytest.mark.parametrize("retry_after", [2000, "2000"])
+@pytest.mark.parametrize("retry_after", [2000, "2000", "2000.0"])
 def test_update_uses_retry_header_in_milliseconds(retry_after: int | str) -> None:
     rate_limit = SHRateLimit(minimum_wait_time=0)
 

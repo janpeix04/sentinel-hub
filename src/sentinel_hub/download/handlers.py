@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def fail_user_errors[Self, T](
     download_func: Callable[[Self, DownloadRequest], T],
-) -> Callable[[Self, DownloadRequest]]:
+) -> Callable[[Self, DownloadRequest], T]:
     """Decorator function for handling user errors."""
 
     @functools.wraps(download_func)
@@ -41,7 +41,7 @@ def fail_user_errors[Self, T](
                     _create_download_failed_message(exception, request.url),
                     request_exception=exception,
                 ) from exception
-            raise exception from exception
+            raise
 
     return new_download_func
 
@@ -54,14 +54,14 @@ def retry_temporary_errors[SelfWithConfig: _HasConfig, T](
 
     @functools.wraps(download_func)
     def new_download_func(self: SelfWithConfig, request: DownloadRequest) -> T:
-        download_attemps = self.config.max_download_attempts
+        download_attempts = self.config.max_download_attempts
         sleep_time = self.config.download_sleep_time
 
-        for attempt in range(download_attemps):
+        for attempt in range(download_attempts):
             try:
                 return download_func(self, request)
             except requests.RequestException as exception:
-                attempt_left = download_attemps - (attempt + 1)
+                attempt_left = download_attempts - (attempt + 1)
 
                 if not (
                     _is_temporary_problem(exception)
@@ -71,7 +71,7 @@ def retry_temporary_errors[SelfWithConfig: _HasConfig, T](
                         >= requests.status_codes.codes.INTERNAL_SERVER_ERROR
                     )
                 ):
-                    raise exception from exception
+                    raise
 
                 if attempt_left <= 0:
                     message = _create_download_failed_message(exception, request.url)
@@ -88,8 +88,8 @@ def retry_temporary_errors[SelfWithConfig: _HasConfig, T](
                 time.sleep(sleep_time)
                 sleep_time *= backoff_coefficient
         raise DownloadFailedException(
-            "No download attemps available - configuration parameter "
-            "max_download_attemps should be greater than 0."
+            "No download attempts available - configuration parameter "
+            "max_download_attempts should be greater than 0."
         )
 
     return new_download_func

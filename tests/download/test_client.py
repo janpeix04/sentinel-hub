@@ -112,3 +112,15 @@ def test_check_cached_request_is_matching(download_request: DownloadRequest) -> 
     write_data(request_path, request_info, data_format=MimeType.JSON)
 
     client._check_cached_request_is_matching(download_request, request_path)
+
+
+def test_check_cached_request_without_metadata(
+    download_request: DownloadRequest,
+) -> None:
+    client = DownloadClient()
+
+    request_path, _ = download_request.get_storage_paths()
+    request_info = download_request.get_request_params(include_metadata=False)
+    write_data(request_path, request_info, data_format=MimeType.JSON)
+
+    client._check_cached_request_is_matching(download_request, request_path)
