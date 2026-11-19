@@ -6,3 +6,6 @@ __pycache__/
 
 # credentials
 config.toml
+
+# test outputs
+TestOutputs/

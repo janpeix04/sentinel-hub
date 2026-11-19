@@ -31,9 +31,17 @@ class _ProcessingLevel:
     L2A = "L2A"
 
 
+class OrbitDirection:
+    """Orbit directions"""
+
+    ASCENDING = "ASCENDING"
+    DESCENDING = "DESCENDING"
+    BOTH = "BOTH"
+
+
 def _shallow_asdict(dataclass_instance: Any) -> dict[str, Any]:
     """
-    Returns a dictionary of fields and values, but is not recursive and does not deepcopy 
+    Returns a dictionary of fields and values, but is not recursive and does not deepcopy
     like `asdict`.
     """
     # This definition needs to be above the class definitions in the file
@@ -50,7 +58,7 @@ class _DataCollectionMeta(EnumMeta):
         """
         This is executed whenever `DataCollection('something')` is called.
 
-        This solves a problem of pickling a custom DataCollection and unpickling it in 
+        This solves a problem of pickling a custom DataCollection and unpickling it in
         another process.
         """
         if (
@@ -86,7 +94,7 @@ class DataCollectionDefinition:
 
     def __post_init__(self):  # type: ignore[no-untyped-def] # not typechecked because we mutate immutable dataclasses
         """
-        In case a list of bands or metabands has been given this makes sure to cast it into 
+        In case a list of bands or metabands has been given this makes sure to cast it into
         a tuple.
         """
         if isinstance(self.bands, list):
@@ -110,7 +118,7 @@ class DataCollectionDefinition:
 
     def derive(self, **params: Any) -> DataCollectionDefinition:
         """
-        Create a new data collection definition from current definition and parameters that 
+        Create a new data collection definition from current definition and parameters that
         override current parameters.
         """
         derived_params = _shallow_asdict(self)
@@ -123,9 +131,9 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
     """
     An enum class for data collections.
 
-    It contains a number of predefined data collections, which are the most commonly used with 
+    It contains a number of predefined data collections, which are the most commonly used with
     Sentinel Hub service. Additionally, it also allows defining new data collections by
-    specifying data collection parameters relevant for the service. Check 
+    specifying data collection parameters relevant for the service. Check
     `DataCollection.define` and similar methods for more.
     """
 
@@ -173,8 +181,8 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         """
         Define a new data collection.
 
-        Note that all parameters, except `name` are optional. If a data collection definition 
-        won't be used for a certain use case (e.g. Process API, WFS, etc.), parameters for that 
+        Note that all parameters, except `name` are optional. If a data collection definition
+        won't be used for a certain use case (e.g. Process API, WFS, etc.), parameters for that
         use case don't have to be defined.
         """
         definition = DataCollectionDefinition(
@@ -206,8 +214,8 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         cls, name: str, definition: DataCollectionDefinition
     ) -> None:
         """
-        Tries adding a new data collection definition. If the exact enum has already been 
-        defined then it won't do anything. However, if either a name or a definition has 
+        Tries adding a new data collection definition. If the exact enum has already been
+        defined then it won't do anything. However, if either a name or a definition has
         already been matched with another name or definition then it will raise an error.
         """
         is_name_defined = name in cls.__members__
@@ -278,8 +286,8 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
 
     def __getattr__(self, item: str) -> Any:
         """
-        The following insures that any attribute from DataCollectionDefinition, which is 
-        already not a property or an attribute of DataCollection, becomes an attribute of 
+        The following insures that any attribute from DataCollectionDefinition, which is
+        already not a property or an attribute of DataCollection, becomes an attribute of
         DataCollection.
         """
         if (

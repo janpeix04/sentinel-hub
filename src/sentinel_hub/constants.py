@@ -348,3 +348,26 @@ class CRS(Enum, metaclass=CRSMeta):
             if self is CRS.WGS84
             else self.ogc_string()
         )
+
+
+class ResamplingType(Enum):
+    """Enum constant class for type of resampling."""
+
+    NEAREST = "NEAREST"
+    BILINEAR = "BILINEAR"
+    BICUBIC = "BICUBIC"
+
+    @classmethod
+    def _missing_(cls, value: object) -> ResamplingType:
+        # This triggers if value is not found, before raising an error (see Enum docs). Makes class case-insensitive.
+        if isinstance(value, str) and value.upper() in cls._value2member_map_:
+            return cls(value.upper())
+        return super()._missing_(value)
+
+
+class MosaickingOrder(Enum):
+    """Enum constant class for type of mosaicking order."""
+
+    MOST_RECENT = "mostRecent"
+    LEAST_RECENT = "leastRecent"
+    LEAST_CC = "leastCC"
