@@ -1,5 +1,8 @@
 import mimetypes
 from enum import Enum
+from typing import ClassVar
+
+from sentinel_hub import __version__
 
 
 class ServiceUrl:
@@ -127,3 +130,10 @@ class RequestType(Enum):
     DELETE = "DELETE"
     PUT = "PUT"
     PATCH = "PATCH"
+
+
+class SHConstants:
+    """Common constants used in various requests."""
+
+    LATEST = "latest"
+    HEADERS: ClassVar[dict[str, str]] = {"User-Agent": f"sentinel-hub/v{__version__}"}

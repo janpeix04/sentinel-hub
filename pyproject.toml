@@ -11,6 +11,7 @@ dependencies = [
     "numpy>=2.5.5",
     "pillow>=13.0.0",
     "requests>=2.34.2",
+    "requests-oauthlib>=2.0.0",
     "tifffile>=2026.11.16",
     "tomli-w>=1.2.0",
     "tqdm>=4.70.1",
@@ -27,7 +28,11 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.2.0",
     "pytest-dependency>=0.6.1",
+    "requests-mock>=1.12.1",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "sh_integration: tests that call the live Copernicus Data Space Sentinel Hub service (need SH_CLIENT_ID and SH_CLIENT_SECRET)",
+]

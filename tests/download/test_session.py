@@ -1,0 +1,274 @@
+from __future__ import annotations
+
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor
+from typing import Any
+
+import pytest
+from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error, InvalidClientError
+from requests_mock import Mocker
+
+from sentinel_hub import SHConfig, SHSession, __version__
+from sentinel_hub.download import (
+    SessionSharing,
+    SessionSharingThread,
+    collect_shared_session,
+)
+from sentinel_hub.exception import DownloadFailedException, SHUserWarning
+from sentinel_hub.types import JsonDict
+
+
+@pytest.fixture(name="fake_config")
+def fake_config_fixture() -> SHConfig:
+    config = SHConfig()
+    config.sh_client_id = "sh-py-test"
+    config.sh_client_secret = "sh-py-test"
+    return config
+
+
+@pytest.fixture(name="fake_token")
+def fake_token_fixture() -> JsonDict:
+    return {"access_token": "x", "expires_in": 1000, "expires_at": time.time() + 1000}
+
+
+@pytest.mark.sh_integration()
+def test_session(session: SHSession) -> None:
+    token = session.token
+    headers = session.session_headers
+
+    for item in [token, headers]:
+        assert isinstance(item, dict)
+
+    for key in ["access_token", "expires_in", "expires_at"]:
+        assert key in token
+
+    same_token = session.token
+    assert token["access_token"] == same_token["access_token"], (
+        "The token has been refreshed"
+    )
+
+    token["expires_at"] = 0
+    new_token = session.token
+    assert token["access_token"] != new_token["access_token"], (
+        "The token has not been refreshed"
+    )
+
+
+@pytest.mark.sh_integration()
+def test_token_info(session: SHSession) -> None:
+    assert "azp" in session.info()
+
+
+def test_session_content_and_headers(
+    fake_config: SHConfig, fake_token: dict[str, Any], requests_mock: Mocker
+) -> None:
+    requests_mock.post(
+        url=fake_config.sh_token_url, response_list=[{"json": fake_token}]
+    )
+    call_time = time.time()
+    token = SHSession(config=fake_config).token
+    assert token["expires_at"] == pytest.approx(
+        call_time + fake_token["expires_in"], 1.0
+    )
+    token["expires_at"] = fake_token["expires_at"]
+    assert token == fake_token
+
+    assert len(requests_mock.request_history) == 1
+    mocked_request = requests_mock.request_history[0]
+
+    assert mocked_request.url == fake_config.sh_token_url
+    assert mocked_request.headers["User-Agent"] == f"sentinel-hub/v{__version__}"
+    assert mocked_request.headers["Content-Type"] == "application/x-www-form-urlencoded"
+
+
+def test_session_with_missing_credentials(fake_token: JsonDict) -> None:
+    config_without_credentials = SHConfig(use_defaults=True)
+
+    with pytest.raises(ValueError):
+        SHSession(config=config_without_credentials)
+
+    with pytest.raises(ValueError):
+        SHSession(config=config_without_credentials, _token=fake_token)
+
+    session = SHSession(
+        config=config_without_credentials, refresh_before_expiry=None, _token=fake_token
+    )
+    assert session.token == fake_token
+
+
+def test_from_token(fake_token: JsonDict) -> None:
+    session = SHSession.from_token(fake_token)
+    assert session.token == fake_token
+    assert session.refresh_before_expiry is None
+
+    fake_token["expires_at"] -= fake_token["expires_in"]
+    session = SHSession.from_token(fake_token)
+    with pytest.warns(SHUserWarning):
+        expired_token = session.token
+    assert expired_token == fake_token
+
+
+@pytest.mark.sh_integration()
+def test_refreshing_procedure(fake_token: JsonDict, fake_config: SHConfig) -> None:
+    fake_token["expires_at"] -= 500
+
+    for expiry in [None, 400]:
+        session = SHSession(
+            config=fake_config, refresh_before_expiry=expiry, _token=fake_token
+        )
+        assert session.token == fake_token
+
+    session = SHSession(
+        config=fake_config, refresh_before_expiry=500, _token=fake_token
+    )
+    with pytest.raises(InvalidClientError):
+        _ = session.token
+
+
+@pytest.mark.parametrize("status_code", [400, 404])
+@pytest.mark.parametrize(
+    ("response_payload", "expected_exception"),
+    [
+        ({"error": "Mocked error message", "access_token": "xxx"}, CustomOAuth2Error),
+        ({"access_token": "xxx"}, DownloadFailedException),
+        (None, DownloadFailedException),
+    ],
+)
+def test_oauth_compliance_hook_4xx(
+    requests_mock: Mocker,
+    status_code: int,
+    response_payload: JsonDict | None,
+    expected_exception: type[Exception],
+    fake_config: SHConfig,
+) -> None:
+    requests_mock.post(
+        fake_config.sh_token_url, json=response_payload, status_code=status_code
+    )
+
+    with pytest.raises(expected_exception):
+        SHSession(config=fake_config)
+    assert len(requests_mock.request_history) == 1
+
+
+@pytest.mark.parametrize("status_code", [500, 503])
+@pytest.mark.parametrize(
+    "response_payload",
+    [
+        ({"error": "Mocked error message", "access_token": "xxx"},),
+        ({"access_token": "xxx"},),
+        (None,),
+    ],
+)
+def test_oauth_compliance_hook_5xx(
+    requests_mock: Mocker,
+    status_code: int,
+    response_payload: JsonDict | None,
+    fake_config: SHConfig,
+) -> None:
+    requests_mock.post(
+        fake_config.sh_token_url, json=response_payload, status_code=status_code
+    )
+
+    fake_config.max_download_attempts = 10
+    fake_config.download_sleep_time = 0
+
+    with pytest.raises(DownloadFailedException):
+        SHSession(config=fake_config)
+    assert len(requests_mock.request_history) == fake_config.max_download_attempts
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="On Windows a shared memory block is destroyed once its last handle is closed, so sharing does not work",
+)
+@pytest.mark.parametrize("memory_name", [None, "test-name"])
+def test_session_sharing_single_process(
+    fake_token: JsonDict, fake_config: SHConfig, memory_name: str | None
+) -> None:
+    session = SHSession(config=fake_config, refresh_before_expiry=0, _token=fake_token)
+
+    kwargs = {} if memory_name is None else {"memory_name": memory_name}
+    thread = SessionSharingThread(session, name="thread name", **kwargs)
+    assert thread.name == "thread name"
+
+    thread.start()
+
+    try:
+        collected_session = collect_shared_session(**kwargs)
+        assert collected_session.token == fake_token
+    finally:
+        thread.join()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="On Windows a shared memory block is destroyed once its last handle is closed, so sharing does not work",
+)
+@pytest.mark.parametrize("memory_name", [None, "test-name"])
+def test_session_sharing_multiprocess(
+    fake_token: JsonDict, fake_config: SHConfig, memory_name: str | None
+) -> None:
+    session = SHSession(config=fake_config, refresh_before_expiry=0, _token=fake_token)
+
+    kwargs = {} if memory_name is None else {"memory_name": memory_name}
+    thread = SessionSharingThread(session, **kwargs)
+    thread.start()
+
+    try:
+        with ProcessPoolExecutor(max_workers=4) as executor:
+            futures = [
+                executor.submit(collect_shared_session, **kwargs) for _ in range(10)
+            ]
+            collected_sessions = [future.result() for future in futures]
+
+        assert all(
+            collected_session.token == fake_token
+            for collected_session in collected_sessions
+        )
+    finally:
+        thread.join()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="On Windows a shared memory block is destroyed once its last handle is closed, so sharing does not work",
+)
+@pytest.mark.parametrize("memory_name", [None, "test-name"])
+def test_session_sharing_object(
+    fake_token: JsonDict, fake_config: SHConfig, memory_name: str | None
+) -> None:
+    session = SHSession(config=fake_config, refresh_before_expiry=0, _token=fake_token)
+
+    kwargs = {} if memory_name is None else {"memory_name": memory_name}
+    manager = SessionSharing(session, name="thread name", **kwargs)
+
+    with pytest.raises(FileNotFoundError):
+        collect_shared_session(**kwargs)
+
+    with manager:
+        collected_session = collect_shared_session(**kwargs)
+        assert collected_session.token == fake_token
+
+    with pytest.raises(FileNotFoundError):
+        collect_shared_session(**kwargs)
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="On Windows a shared memory block is destroyed once its last handle is closed, so sharing does not work",
+)
+def test_handling_of_unclosed_memory(
+    fake_token: JsonDict, fake_config: SHConfig
+) -> None:
+    session = SHSession(config=fake_config, refresh_before_expiry=0, _token=fake_token)
+
+    thread1 = SessionSharingThread(session)
+    thread1.start()
+
+    thread2 = SessionSharingThread(session)
+    with pytest.warns(SHUserWarning):
+        thread2.start()
+
+    thread1.join()
+    thread2.join()

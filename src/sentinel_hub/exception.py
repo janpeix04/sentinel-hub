@@ -29,8 +29,22 @@ class MissingDataInRequestException(BaseSHException):
     """This exception is raised when an iteration is performed on a request without data."""
 
 
+class OutOfRequestsException(DownloadFailedException):
+    """An exception raised whenever download cannot be done because user has run out of requests or processing units."""
+
+
 class SHRuntimeWarning(RuntimeWarning):
-    """A custom runtime warning for sentinelhub-py package"""
+    """A custom runtime warning for sentinel-hub package."""
+
+
+class SHUserWarning(UserWarning):
+    """A custom user warning for sentinel-hub package."""
+
+
+class SHRateLimitWarning(SHRuntimeWarning):
+    """A custom runtime warning in case user hit the rate limit for downloads"""
 
 
 warnings.simplefilter("always", SHRuntimeWarning)
+warnings.simplefilter("always", SHRateLimitWarning)
+warnings.simplefilter("default", SHUserWarning)
