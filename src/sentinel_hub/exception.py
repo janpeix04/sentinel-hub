@@ -30,7 +30,12 @@ class MissingDataInRequestException(BaseSHException):
 
 
 class SHRuntimeWarning(RuntimeWarning):
-    """A custom runtime warning for sentinelhub-py package"""
+    """A custom runtime warning for sentinel-hub package."""
+
+
+class SHUserWarning(UserWarning):
+    """A custom user warning for sentinel-hub package."""
 
 
 warnings.simplefilter("always", SHRuntimeWarning)
+warnings.simplefilter("default", SHUserWarning)
