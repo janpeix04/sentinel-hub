@@ -113,6 +113,27 @@ class Bands:
             for name in ["S7", "S8", "S9", "F1", "F2"]
         ),
     )
+    SENTINEL5P = (
+        *(
+            Band(name, (Unit.MOL_M2,), (np.float32,))
+            for name in ["CO", "HCHO", "NO2", "O3", "SO2"]
+        ),
+        Band("CH4", (Unit.PPB,), (np.float32,)),
+        *(
+            Band(name, (Unit.INDEX,), (np.float32,))
+            for name in ["AER_AI_340_380", "AER_AI_354_388"]
+        ),
+        *(
+            Band(name, (Unit.PASCALS,), (np.float32,))
+            for name in ["CLOUD_BASE_PRESSURE", "CLOUD_TOP_PRESSURE"]
+        ),
+        *(
+            Band(name, (Unit.METERS,), (np.float32,))
+            for name in ["CLOUD_BASE_HEIGHT", "CLOUD_TOP_HEIGHT"]
+        ),
+        Band("CLOUD_OPTICAL_THICKNESS", (Unit.OPTICAL_DEPTH,), (np.float32,)),
+        Band("CLOUD_FRACTION", (Unit.FRACTION,), (np.float32,)),
+    )
 
 
 class MetaBands:
@@ -170,3 +191,4 @@ class MetaBands:
         Band("dataMask", (Unit.DN,), (bool,)),
     )
     SENTINEL3_SLSTR = (Band("dataMask", (Unit.DN,), (bool,)),)
+    SENTINEL5P = (Band("dataMask", (Unit.DN,), (bool,)),)
