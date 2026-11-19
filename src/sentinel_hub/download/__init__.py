@@ -6,3 +6,4 @@ from sentinel_hub.download.session import (
     SHSession,
     collect_shared_session,
 )
+from sentinel_hub.download.sh_client import SHDownloadClient
