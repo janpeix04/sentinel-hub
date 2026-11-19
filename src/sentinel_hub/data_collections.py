@@ -15,20 +15,60 @@ else:
 class _CollectionType:
     """Types of Sentinel Hub data collections."""
 
+    SENTINEL1 = "Sentinel-1"
     SENTINEL2 = "Sentinel-2"
 
 
 class _SensorType:
     """Satellite sensors."""
 
+    C_SAR = "C-SAR"
     MSI = "MSI"
 
 
 class _ProcessingLevel:
     """Processing levels."""
 
+    GRD = "GRD"
     L1C = "L1C"
     L2A = "L2A"
+
+
+class _SwathMode:
+    """Swath (acquisition) modes for SAR sensors."""
+
+    IW = "IW"
+    EW = "EW"
+    SM = "SM"
+    WV = "WV"
+
+
+class _Polarization:
+    """SAR polarizations."""
+
+    DV = "DV"
+    DH = "DH"
+    SV = "SV"
+    SH = "SH"
+    HH = "HH"
+    HV = "HV"
+    VV = "VV"
+    VH = "VH"
+
+
+class _Resolution:
+    """Product resolution (specific to Sentinel-1 collections)."""
+
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class OrbitDirection:
+    """Orbit directions."""
+
+    ASCENDING = "ASCENDING"
+    DESCENDING = "DESCENDING"
+    BOTH = "BOTH"
 
 
 def _shallow_asdict(dataclass_instance: Any) -> dict[str, Any]:
@@ -77,6 +117,10 @@ class DataCollectionDefinition:
     collection_type: str | None = None
     sensor_type: str | None = None
     processing_level: str | None = None
+    swath_mode: str | None = None
+    polarization: str | None = None
+    resolution: str | None = None
+    orbit_direction: str | None = None
     bands: tuple[Band, ...] | None = None
     metabands: tuple[Band, ...] | None = None
     has_cloud_coverage: bool = False
@@ -150,6 +194,43 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         metabands=MetaBands.SENTINEL2_L2A,
         has_cloud_coverage=True,
     )
+    SENTINEL1 = DataCollectionDefinition(
+        api_id="sentinel-1-grd",
+        catalog_id="sentinel-1-grd",
+        service_url=ServiceUrl.CDSE,
+        collection_type=_CollectionType.SENTINEL1,
+        sensor_type=_SensorType.C_SAR,
+        processing_level=_ProcessingLevel.GRD,
+        orbit_direction=OrbitDirection.BOTH,
+        bands=Bands.SENTINEL1,
+        metabands=MetaBands.SENTINEL1,
+    )
+    SENTINEL1_IW = SENTINEL1.derive(
+        swath_mode=_SwathMode.IW,
+        polarization=_Polarization.DV,
+        resolution=_Resolution.HIGH,
+        bands=Bands.SENTINEL1_IW,
+    )
+    SENTINEL1_IW_ASC = SENTINEL1_IW.derive(orbit_direction=OrbitDirection.ASCENDING)
+    SENTINEL1_IW_DES = SENTINEL1_IW.derive(orbit_direction=OrbitDirection.DESCENDING)
+    SENTINEL1_EW = SENTINEL1.derive(
+        swath_mode=_SwathMode.EW,
+        polarization=_Polarization.DH,
+        resolution=_Resolution.MEDIUM,
+        bands=Bands.SENTINEL1_EW,
+    )
+    SENTINEL1_EW_ASC = SENTINEL1_EW.derive(orbit_direction=OrbitDirection.ASCENDING)
+    SENTINEL1_EW_DES = SENTINEL1_EW.derive(orbit_direction=OrbitDirection.DESCENDING)
+    SENTINEL1_EW_SH = SENTINEL1_EW.derive(
+        polarization=_Polarization.SH,
+        bands=Bands.SENTINEL1_EW_SH,
+    )
+    SENTINEL1_EW_SH_ASC = SENTINEL1_EW_SH.derive(
+        orbit_direction=OrbitDirection.ASCENDING
+    )
+    SENTINEL1_EW_SH_DES = SENTINEL1_EW_SH.derive(
+        orbit_direction=OrbitDirection.DESCENDING
+    )
 
     @classmethod
     def define(
@@ -162,6 +243,10 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         collection_type: str | None = None,
         sensor_type: str | None = None,
         processing_level: str | None = None,
+        swath_mode: str | None = None,
+        polarization: str | None = None,
+        resolution: str | None = None,
+        orbit_direction: str | None = None,
         bands: tuple[Band, ...] | None = None,
         metabands: tuple[Band, ...] | None = None,
         has_cloud_coverage: bool = False,
@@ -180,6 +265,10 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
             collection_type=collection_type,
             sensor_type=sensor_type,
             processing_level=processing_level,
+            swath_mode=swath_mode,
+            polarization=polarization,
+            resolution=resolution,
+            orbit_direction=orbit_direction,
             bands=bands,
             metabands=metabands,
             has_cloud_coverage=has_cloud_coverage,
@@ -278,6 +367,21 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
                 return definition_dict[item]
 
         return super().__getattribute__(item)
+
+    @property
+    def is_sentinel1(self) -> bool:
+        """Checks if data collection is a Sentinel-1 collection type."""
+        return self.collection_type == _CollectionType.SENTINEL1
+
+    def contains_orbit_direction(self, orbit_direction: str) -> bool:
+        """Checks if a data collection contains given orbit direction."""
+        defined_direction = self.orbit_direction
+        if (
+            defined_direction is None
+            or defined_direction.upper() == OrbitDirection.BOTH
+        ):
+            return True
+        return orbit_direction.upper() == defined_direction.upper()
 
     @classmethod
     def get_available_collections(cls) -> list[DataCollection]:

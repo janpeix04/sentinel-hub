@@ -84,6 +84,17 @@ class Bands:
             "B12",
         ]
     )
+    SENTINEL1 = tuple(
+        Band(name, (Unit.LINEAR_POWER,), (np.float32,))
+        for name in ["VV", "HH", "VH", "HV"]
+    )
+    SENTINEL1_IW = tuple(
+        Band(name, (Unit.LINEAR_POWER,), (np.float32,)) for name in ["VV", "VH"]
+    )
+    SENTINEL1_EW = tuple(
+        Band(name, (Unit.LINEAR_POWER,), (np.float32,)) for name in ["HH", "HV"]
+    )
+    SENTINEL1_EW_SH = (Band("HH", (Unit.LINEAR_POWER,), (np.float32,)),)
 
 
 class MetaBands:
@@ -118,5 +129,11 @@ class MetaBands:
         ),
         *(Band(name, (Unit.PERCENT,), (np.uint8,)) for name in ["SNW", "CLD"]),
         *(Band(name, (Unit.DN,), (np.uint8,)) for name in ["SCL", "CLP", "CLM"]),
+        Band("dataMask", (Unit.DN,), (bool,)),
+    )
+    SENTINEL1 = (
+        Band("localIncidenceAngle", (Unit.DEGREES,), (np.float32,)),
+        Band("scatteringArea", (Unit.DN,), (np.float32,)),
+        Band("shadowMask", (Unit.DN,), (np.uint8,)),
         Band("dataMask", (Unit.DN,), (bool,)),
     )
