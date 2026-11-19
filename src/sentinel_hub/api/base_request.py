@@ -198,6 +198,10 @@ def _get_data_filters(
     if data_collection.is_sentinel1:
         data_filter.update(_get_sentinel1_data_filters(data_collection))
 
+    orbit_direction = data_collection.orbit_direction
+    if orbit_direction and orbit_direction.upper() != OrbitDirection.BOTH:
+        data_filter["orbitDirection"] = orbit_direction.upper()
+
     return data_filter
 
 
@@ -216,10 +220,6 @@ def _get_sentinel1_data_filters(data_collection: DataCollection) -> dict[str, An
 
     if data_collection.resolution:
         data_filter["resolution"] = data_collection.resolution.upper()
-
-    orbit_direction = data_collection.orbit_direction
-    if orbit_direction and orbit_direction.upper() != OrbitDirection.BOTH:
-        data_filter["orbitDirection"] = orbit_direction.upper()
 
     return data_filter
 

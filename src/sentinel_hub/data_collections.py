@@ -17,6 +17,7 @@ class _CollectionType:
 
     SENTINEL1 = "Sentinel-1"
     SENTINEL2 = "Sentinel-2"
+    SENTINEL3 = "Sentinel-3"
 
 
 class _SensorType:
@@ -24,12 +25,15 @@ class _SensorType:
 
     C_SAR = "C-SAR"
     MSI = "MSI"
+    OLCI = "OLCI"
+    SLSTR = "SLSTR"
 
 
 class _ProcessingLevel:
     """Processing levels."""
 
     GRD = "GRD"
+    L1B = "L1B"
     L1C = "L1C"
     L2A = "L2A"
 
@@ -231,6 +235,27 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
     SENTINEL1_EW_SH_DES = SENTINEL1_EW_SH.derive(
         orbit_direction=OrbitDirection.DESCENDING
     )
+    SENTINEL3_OLCI = DataCollectionDefinition(
+        api_id="sentinel-3-olci",
+        catalog_id="sentinel-3-olci",
+        service_url=ServiceUrl.CDSE,
+        collection_type=_CollectionType.SENTINEL3,
+        sensor_type=_SensorType.OLCI,
+        processing_level=_ProcessingLevel.L1B,
+        bands=Bands.SENTINEL3_OLCI,
+        metabands=MetaBands.SENTINEL3_OLCI,
+    )
+    SENTINEL3_SLSTR = DataCollectionDefinition(
+        api_id="sentinel-3-slstr",
+        catalog_id="sentinel-3-slstr",
+        service_url=ServiceUrl.CDSE,
+        collection_type=_CollectionType.SENTINEL3,
+        sensor_type=_SensorType.SLSTR,
+        processing_level=_ProcessingLevel.L1B,
+        bands=Bands.SENTINEL3_SLSTR,
+        metabands=MetaBands.SENTINEL3_SLSTR,
+        has_cloud_coverage=True,
+    )
 
     @classmethod
     def define(
@@ -372,6 +397,11 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
     def is_sentinel1(self) -> bool:
         """Checks if data collection is a Sentinel-1 collection type."""
         return self.collection_type == _CollectionType.SENTINEL1
+
+    @property
+    def is_sentinel3(self) -> bool:
+        """Checks if data collection is a Sentinel-3 collection type."""
+        return self.collection_type == _CollectionType.SENTINEL3
 
     def contains_orbit_direction(self, orbit_direction: str) -> bool:
         """Checks if a data collection contains given orbit direction."""

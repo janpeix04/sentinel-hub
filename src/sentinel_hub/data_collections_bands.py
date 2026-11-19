@@ -95,6 +95,24 @@ class Bands:
         Band(name, (Unit.LINEAR_POWER,), (np.float32,)) for name in ["HH", "HV"]
     )
     SENTINEL1_EW_SH = (Band("HH", (Unit.LINEAR_POWER,), (np.float32,)),)
+    SENTINEL3_OLCI = tuple(
+        Band(
+            f"B{index:02}", (Unit.REFLECTANCE, Unit.RADIANCE), (np.float32, np.float32)
+        )
+        for index in range(1, 22)
+    )
+    SENTINEL3_SLSTR = (
+        *(
+            Band(
+                f"S{index}", (Unit.REFLECTANCE, Unit.RADIANCE), (np.float32, np.float32)
+            )
+            for index in range(1, 7)
+        ),
+        *(
+            Band(name, (Unit.BRIGHTNESS_TEMPERATURE,), (np.float32,))
+            for name in ["S7", "S8", "S9", "F1", "F2"]
+        ),
+    )
 
 
 class MetaBands:
@@ -137,3 +155,18 @@ class MetaBands:
         Band("shadowMask", (Unit.DN,), (np.uint8,)),
         Band("dataMask", (Unit.DN,), (bool,)),
     )
+    SENTINEL3_OLCI = (
+        Band("QUALITY_FLAGS", (Unit.DN,), (np.uint32,)),
+        *(
+            Band(name, (Unit.DEGREES,), (np.float32,))
+            for name in ["SAA", "SZA", "VAA", "VZA"]
+        ),
+        Band("HUMIDITY", (Unit.PERCENT,), (np.float32,)),
+        Band("SEA_LEVEL_PRESSURE", (Unit.HECTOPASCALS,), (np.float32,)),
+        *(
+            Band(name, (Unit.KG_M2,), (np.float32,))
+            for name in ["TOTAL_COLUMN_OZONE", "TOTAL_COLUMN_WATER_VAPOUR"]
+        ),
+        Band("dataMask", (Unit.DN,), (bool,)),
+    )
+    SENTINEL3_SLSTR = (Band("dataMask", (Unit.DN,), (bool,)),)
