@@ -9,7 +9,7 @@ from sentinel_hub.constants import (
     RequestType,
     ResamplingType,
 )
-from sentinel_hub.data_collections import DataCollection
+from sentinel_hub.data_collections import DataCollection, OrbitDirection
 from sentinel_hub.download import DownloadRequest
 from sentinel_hub.geometry import BBox, Geometry
 from sentinel_hub.time_utils import (
@@ -74,7 +74,9 @@ class SHBaseApiRequest(DataRequest, metaclass=ABCMeta):
         if identifier:
             input_data_dict["id"] = identifier
 
-        data_filters = _get_data_filters(time_interval, maxcc, mosaicking_order)
+        data_filters = _get_data_filters(
+            data_collection, time_interval, maxcc, mosaicking_order
+        )
         if data_filters:
             input_data_dict["dataFilter"] = data_filters
 
@@ -170,6 +172,7 @@ class InputDataDict(dict):
 
 
 def _get_data_filters(
+    data_collection: DataCollection,
     time_interval: RawTimeIntervalType | None,
     maxcc: float | None,
     mosaicking_order: MosaickingOrder | None,
@@ -191,6 +194,32 @@ def _get_data_filters(
 
     if mosaicking_order:
         data_filter["mosaickingOrder"] = MosaickingOrder(mosaicking_order).value
+
+    if data_collection.is_sentinel1:
+        data_filter.update(_get_sentinel1_data_filters(data_collection))
+
+    orbit_direction = data_collection.orbit_direction
+    if orbit_direction and orbit_direction.upper() != OrbitDirection.BOTH:
+        data_filter["orbitDirection"] = orbit_direction.upper()
+
+    return data_filter
+
+
+def _get_sentinel1_data_filters(data_collection: DataCollection) -> dict[str, Any]:
+    """
+    Builds Sentinel-1 specific data filters from a data collection definition:
+    <https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S1GRD.html>.
+    """
+    data_filter: dict[str, Any] = {}
+
+    if data_collection.swath_mode:
+        data_filter["acquisitionMode"] = data_collection.swath_mode.upper()
+
+    if data_collection.polarization:
+        data_filter["polarization"] = data_collection.polarization.upper()
+
+    if data_collection.resolution:
+        data_filter["resolution"] = data_collection.resolution.upper()
 
     return data_filter
 
