@@ -88,6 +88,12 @@ band supports it; otherwise the band's first (default) unit is used. The output
 | `numpy.uint16` | `UINT16` |
 | `numpy.float32` | `FLOAT32` |
 
+Bands with any other output type, such as Sentinel-3 OLCI `QUALITY_FLAGS` (`uint32`), raise a
+`ValueError`. Write a custom evalscript for those.
+
+The generator only chooses between `DN` and a band's default unit. For another unit, such as
+`RADIANCE` for Sentinel-3 optical bands, write the evalscript yourself.
+
 | `prioritize_dn` | Sentinel-2 `B04` | `sunZenithAngles` |
 |---|---|---|
 | `True` | `DN` → `UINT16` | `DEGREES` → `FLOAT32` |

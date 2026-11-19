@@ -5,6 +5,50 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.2.0] - 2026-11-19
+
+### Added
+
+- **Command line interface** – `sentinel-hub` command (also `python -m sentinel_hub`) with
+  `config`, `collections`, `bands`, `evalscript`, `search`, `process` and `stats` subcommands.
+  Documented in `docs/cli.md`.
+- **Statistical API** – `SHStatistical` for statistics, percentiles and histograms per
+  aggregation interval, with the `SHStatistical.aggregation` helper and the
+  `LastIntervalBehavior` enum. Documented in `docs/statistical-api.md`.
+- **Sentinel-1 GRD** – `DataCollection.SENTINEL1` plus `SENTINEL1_IW`, `SENTINEL1_EW` and
+  `SENTINEL1_EW_SH` variants (each with `_ASC` / `_DES`), with band and metaband specs.
+  New collection fields `swath_mode`, `polarization`, `resolution` and `orbit_direction`
+  are sent as Process / Statistical API `dataFilter` entries; `OrbitDirection` enum,
+  `DataCollection.is_sentinel1` and `contains_orbit_direction`. Documented in
+  `docs/data-collections.md`.
+- **Sentinel-3** – `DataCollection.SENTINEL3_OLCI` and `SENTINEL3_SLSTR` (L1B) and
+  `SENTINEL3_OLCI_L2`, `SENTINEL3_SLSTR_L2` and `SENTINEL3_SYNERGY_L2` (L2) with band and
+  metaband specs, and `DataCollection.is_sentinel3`. New `Unit` members for the L2
+  products: `GRAMS_CM2`, `ATMCM`, `LOG10_1_M`, `LOG10_GRAMS_M2`, `LOG10_MILLIGRAMS_M3`,
+  `MICROEINSTEINS_S_M2` and `ANGSTROM_EXPONENT`.
+- **Sentinel-5P** – `DataCollection.SENTINEL5P` (TROPOMI L2) with trace-gas, aerosol and
+  cloud bands, and `DataCollection.is_sentinel5p`.
+
+### Changed
+
+- `orbit_direction` is now sent as `dataFilter.orbitDirection` for any collection that sets
+  it, not only Sentinel-1, so it also works for SLSTR.
+- `generate_evalscript` raises a `ValueError` naming the band when a band's output type has
+  no Process API sample type, instead of a `KeyError`.
+- Downloads reuse a per-thread `requests.Session`, so HTTP connections are kept alive
+  between requests instead of opened anew each time.
+
+### Fixed
+
+- `SHSession.info` decodes the JWT payload with correct base64url padding.
+- `Retry-After` headers with fractional values no longer raise a `ValueError`.
+- Session sharing reallocates shared memory when a refreshed token no longer fits.
+- Reading a cached request no longer fails when it lacks `timestamp` or `headers`.
+- Download error handlers re-raise the original exception without chaining it to itself.
+- Typos in download error and log messages.
+
 ## [0.1.0] - 2026-11-19
 
 First release of `sentinel-hub`, a Python client for the Sentinel Hub APIs on the
@@ -29,4 +73,6 @@ Copernicus Data Space Ecosystem (CDSE).
 - **Documentation** – README and per-topic guides in `docs/`.
 - **License** – MIT.
 
+[Unreleased]: https://github.com/janpeix04/sentinel-hub/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/janpeix04/sentinel-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/janpeix04/sentinel-hub/releases/tag/v0.1.0

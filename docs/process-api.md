@@ -99,6 +99,32 @@ SHRequest.input_data(
 | `upsampling` / `downsampling` | `processing.upsampling` / `.downsampling` – `NEAREST`, `BILINEAR`, `BICUBIC` |
 | `other_args` | Deep-merged into the entry for any field not covered above |
 
+For Sentinel-1 collections the collection's `swath_mode`, `polarization`, `resolution` and
+`orbit_direction` are added to `dataFilter` automatically (see
+[Data Collections](data-collections.md#sentinel-1-grd)). SAR processing options go through
+`other_args`:
+
+```python
+SHRequest.input_data(
+    DataCollection.SENTINEL1_IW_ASC,
+    time_interval=("2024-06-01", "2024-06-30"),
+    mosaicking_order=MosaickingOrder.MOST_RECENT,
+    other_args={
+        "processing": {
+            "backCoeff": "GAMMA0_TERRAIN",
+            "orthorectify": True,
+            "demInstance": "COPERNICUS_30",
+            "speckleFilter": {"type": "LEE", "windowSizeX": 3, "windowSizeY": 3},
+        }
+    },
+)
+# {"type": "sentinel-1-grd",
+#  "dataFilter": {"timeRange": {...}, "mosaickingOrder": "mostRecent",
+#                 "acquisitionMode": "IW", "polarization": "DV",
+#                 "resolution": "HIGH", "orbitDirection": "ASCENDING"},
+#  "processing": {"backCoeff": "GAMMA0_TERRAIN", "orthorectify": true, ...}}
+```
+
 **Data fusion** – pass several inputs with distinct `identifier`s and reference them in the
 evalscript (`input: [{datasource: "l1c", ...}, {datasource: "l2a", ...}]`):
 

@@ -6,6 +6,7 @@ Enums and constants from `sentinel_hub.constants`. `CRS` is covered in
 - [MimeType](#mimetype)
 - [ResamplingType](#resamplingtype)
 - [MosaickingOrder](#mosaickingorder)
+- [LastIntervalBehavior](#lastintervalbehavior)
 - [ServiceUrl](#serviceurl)
 - [SHConstants](#shconstants)
 - [RequestType](#requesttype)
@@ -57,6 +58,18 @@ Which scene wins when several overlap, used in [`SHRequest.input_data`](process-
 | `MOST_RECENT` | `"mostRecent"` | Newest acquisition on top (service default) |
 | `LEAST_RECENT` | `"leastRecent"` | Oldest acquisition on top |
 | `LEAST_CC` | `"leastCC"` | Least cloudy acquisition on top |
+
+## LastIntervalBehavior
+
+What the [Statistical API](statistical-api.md#aggregation) does with the last aggregation
+interval when the time range is not divisible by the interval. Case-insensitive:
+`LastIntervalBehavior("shorten")` works.
+
+| Member | Value | Meaning |
+|---|---|---|
+| `SKIP` | `"SKIP"` | Drop the last, shorter interval (service default) |
+| `SHORTEN` | `"SHORTEN"` | End the last interval at the end of the time range |
+| `EXTEND` | `"EXTEND"` | Extend the last interval so all intervals are equally long |
 
 ## ServiceUrl
 

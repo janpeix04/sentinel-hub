@@ -1,6 +1,6 @@
 [project]
 name = "sentinel-hub"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python client library for the Sentinel Hub services."
 readme = "README.md"
 license = "MIT"
@@ -23,6 +23,9 @@ dependencies = [
     "tqdm>=4.70.1",
     "utm>=0.9.0",
 ]
+
+[project.scripts]
+sentinel-hub = "sentinel_hub.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]

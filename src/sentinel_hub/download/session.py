@@ -97,8 +97,8 @@ class SHSession:
     def info(self) -> JsonDict:
         """Decode token to get token info."""
         token = self.token["access_token"].split(".")[1]
-        padded = token + "=" * (len(token) % 4)
-        decoded_string = base64.b64decode(padded).decode()
+        padded = token + "=" * (-len(token) % 4)
+        decoded_string = base64.urlsafe_b64decode(padded).decode()
         return json.loads(decoded_string)
 
     @property
@@ -265,7 +265,14 @@ class SessionSharingThread(Thread):
         method will close it automatically and inform users about the problem.
         """
         if self._is_memory_shared_event.is_set():
-            return SharedMemory(name=self.memory_name)
+            memory = SharedMemory(name=self.memory_name)
+            if memory.size >= len(encoded_token):
+                return memory
+
+            # A refreshed token doesn't fit into the existing memory, so it is allocated anew.
+            memory.unlink()
+            memory.close()
+            return self._create_shared_memory(encoded_token)
 
         try:
             memory = self._create_shared_memory(encoded_token)
@@ -359,8 +366,8 @@ def collect_shared_session(
         memory = SharedMemory(name=memory_name)
     except FileNotFoundError as exception:
         raise FileNotFoundError(
-            f"Couldn't obtain a shared session because a shared memory `{memory_name}`"
-            "doesn0t exist. Make sure that you arer running session sharing when calling "
+            f"Couldn't obtain a shared session because a shared memory `{memory_name}` "
+            "doesn't exist. Make sure that you are running session sharing when calling "
             "this function."
         ) from exception
 

@@ -614,6 +614,130 @@ def test_input_data_without_filters() -> None:
     assert {**input_data} == {"type": "sentinel-2-l1c"}
 
 
+@pytest.mark.parametrize(
+    ("data_collection", "expected_data_filter"),
+    [
+        (DataCollection.SENTINEL1, None),
+        (
+            DataCollection.SENTINEL1_IW,
+            {"acquisitionMode": "IW", "polarization": "DV", "resolution": "HIGH"},
+        ),
+        (
+            DataCollection.SENTINEL1_IW_ASC,
+            {
+                "acquisitionMode": "IW",
+                "polarization": "DV",
+                "resolution": "HIGH",
+                "orbitDirection": "ASCENDING",
+            },
+        ),
+        (
+            DataCollection.SENTINEL1_EW_SH_DES,
+            {
+                "acquisitionMode": "EW",
+                "polarization": "SH",
+                "resolution": "MEDIUM",
+                "orbitDirection": "DESCENDING",
+            },
+        ),
+    ],
+)
+def test_input_data_sentinel1(
+    data_collection: DataCollection, expected_data_filter: dict[str, Any] | None
+) -> None:
+    input_data = SHRequest.input_data(data_collection=data_collection)
+
+    assert input_data["type"] == "sentinel-1-grd"
+    assert input_data.service_url == data_collection.service_url
+    assert input_data.get("dataFilter") == expected_data_filter
+
+
+def test_input_data_sentinel1_with_other_filters() -> None:
+    input_data = SHRequest.input_data(
+        data_collection=DataCollection.SENTINEL1_IW_DES,
+        time_interval=("2024-06-01", "2024-06-30"),
+        mosaicking_order=MosaickingOrder.MOST_RECENT,
+        other_args={
+            "dataFilter": {"timeliness": "NRT3h"},
+            "processing": {"backCoeff": "GAMMA0_TERRAIN", "orthorectify": True},
+        },
+    )
+
+    assert {**input_data} == {
+        "type": "sentinel-1-grd",
+        "dataFilter": {
+            "timeRange": {"from": "2024-06-01T00:00:00Z", "to": "2024-06-30T23:59:59Z"},
+            "mosaickingOrder": "mostRecent",
+            "acquisitionMode": "IW",
+            "polarization": "DV",
+            "resolution": "HIGH",
+            "orbitDirection": "DESCENDING",
+            "timeliness": "NRT3h",
+        },
+        "processing": {"backCoeff": "GAMMA0_TERRAIN", "orthorectify": True},
+    }
+
+
+@pytest.mark.parametrize(
+    ("data_collection", "api_id"),
+    [
+        (DataCollection.SENTINEL3_OLCI, "sentinel-3-olci"),
+        (DataCollection.SENTINEL3_SLSTR, "sentinel-3-slstr"),
+        (DataCollection.SENTINEL3_OLCI_L2, "sentinel-3-olci-l2"),
+        (DataCollection.SENTINEL3_SLSTR_L2, "sentinel-3-slstr-l2"),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "sentinel-3-synergy-l2"),
+    ],
+)
+def test_input_data_sentinel3(data_collection: DataCollection, api_id: str) -> None:
+    input_data = SHRequest.input_data(data_collection=data_collection)
+
+    assert {**input_data} == {"type": api_id}
+    assert input_data.service_url == data_collection.service_url
+
+
+def test_input_data_sentinel3_slstr_filters() -> None:
+    slstr_day = DataCollection.SENTINEL3_SLSTR.define_from(
+        "SENTINEL3_SLSTR_DES", orbit_direction="descending"
+    )
+    input_data = SHRequest.input_data(
+        data_collection=slstr_day,
+        maxcc=0.2,
+        mosaicking_order=MosaickingOrder.LEAST_CC,
+        other_args={"dataFilter": {"view": "OBLIQUE"}},
+    )
+
+    assert {**input_data} == {
+        "type": "sentinel-3-slstr",
+        "dataFilter": {
+            "maxCloudCoverage": 20,
+            "mosaickingOrder": "leastCC",
+            "orbitDirection": "DESCENDING",
+            "view": "OBLIQUE",
+        },
+    }
+
+
+def test_input_data_sentinel5p() -> None:
+    input_data = SHRequest.input_data(
+        data_collection=DataCollection.SENTINEL5P,
+        time_interval=("2024-06-01", "2024-06-01"),
+        other_args={
+            "dataFilter": {"timeliness": "OFFL"},
+            "processing": {"minQa": 75},
+        },
+    )
+
+    assert input_data.service_url == DataCollection.SENTINEL5P.service_url
+    assert {**input_data} == {
+        "type": "sentinel-5p-l2",
+        "dataFilter": {
+            "timeRange": {"from": "2024-06-01T00:00:00Z", "to": "2024-06-01T23:59:59Z"},
+            "timeliness": "OFFL",
+        },
+        "processing": {"minQa": 75},
+    }
+
+
 @pytest.mark.parametrize("maxcc", [-0.1, 1.1])
 def test_input_data_invalid_maxcc(maxcc: float) -> None:
     with pytest.raises(ValueError):

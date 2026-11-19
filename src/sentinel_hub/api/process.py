@@ -16,7 +16,7 @@ class SHRequest(SHBaseApiRequest):
     <https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html>.
     """
 
-    _SERVICE_ENDPOINT = "process"
+    _SERVICE_ENDPOINT = "api/v1/process"
 
     def __init__(
         self,

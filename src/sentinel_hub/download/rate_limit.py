@@ -47,7 +47,7 @@ class SHRateLimit:
         Update the next possible download time if the service has responded with
         the rate limit.
         """
-        retry_after: float = int(
+        retry_after: float = float(
             headers.get(self.RETRY_HEADER, default)
         )  # can be a string representation of a number
         retry_after = retry_after / 1000
