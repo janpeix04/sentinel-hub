@@ -2,6 +2,7 @@ from sentinel_hub._version import __version__
 from sentinel_hub.api import SHCatalog
 from sentinel_hub.config import SHConfig
 from sentinel_hub.constants import CRS, MimeType, ServiceUrl, SHConstants
+from sentinel_hub.data_collections import DataCollection
 from sentinel_hub.download import (
     DownloadClient,
     DownloadRequest,
