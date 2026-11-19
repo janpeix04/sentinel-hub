@@ -93,7 +93,7 @@ def parse_time_interval(
     **kwargs: Any,
 ) -> tuple[dt.datetime | None, dt.datetime | None]:
     """
-    Parse input into an interval of two times, specifying start and end time, into 
+    Parse input into an interval of two times, specifying start and end time, into
     datetime objects.
 
     The input time can have the following formats, which will be parsed as:
@@ -102,8 +102,8 @@ def parse_time_interval(
      - list or tuple of two dates in form `YYYY-MM-DD` -> `[YYYY-MM-DDT00:00:00, YYYY-MM-DDT23:59:59]`
      - list or tuple of two dates in form `YYYY-MM-DDThh:mm:ss` -> `[YYYY-MM-DDThh:mm:ss, YYYY-MM-DDThh:mm:ss]`
 
-    All input times can also be specified as `datetime` objects. Instances of `datetime.date` 
-    will be treated as `YYYY-MM-DD` and instance of `datetime.datetime` will be treated as 
+    All input times can also be specified as `datetime` objects. Instances of `datetime.date`
+    will be treated as `YYYY-MM-DD` and instance of `datetime.datetime` will be treated as
     `YYYY-MM-DDThh:mm:ss`.
     """
     date_interval: tuple[dt.date | None, dt.date | None]

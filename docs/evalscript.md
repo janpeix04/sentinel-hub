@@ -111,7 +111,11 @@ from sentinel_hub import MimeType, SHRequest
 
 request = SHRequest(
     evalscript=evalscript,  # merged_bands_output="bands" + meta_bands=["dataMask"]
-    input_data=[SHRequest.input_data(DataCollection.SENTINEL2_L2A, time_interval=("2024-06-01", "2024-06-30"))],
+    input_data=[
+        SHRequest.input_data(
+            DataCollection.SENTINEL2_L2A, time_interval=("2024-06-01", "2024-06-30")
+        )
+    ],
     responses=[
         SHRequest.output_response("bands", MimeType.TIFF),
         SHRequest.output_response("dataMask", MimeType.TIFF),

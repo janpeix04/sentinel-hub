@@ -50,7 +50,7 @@ request = SHStatistical(
     bbox=BBox((414315, 4958219, 414859, 4958819), crs=CRS("32633")),
 )
 
-result = request.get_data()[0]   # dict, the decoded JSON response
+result = request.get_data()[0]  # dict, the decoded JSON response
 for interval in result["data"]:
     stats = interval["outputs"]["ndvi"]["bands"]["B0"]["stats"]
     print(interval["interval"]["from"], stats["mean"])
@@ -83,6 +83,7 @@ construction and stored in `request.payload`:
 
 ```python
 import json
+
 print(json.dumps(request.payload, indent=2))
 ```
 
@@ -111,10 +112,10 @@ from sentinel_hub import LastIntervalBehavior
 SHStatistical.aggregation(
     evalscript=evalscript,
     time_interval=("2024-06-01", "2024-08-31"),
-    aggregation_interval="P10D",                       # ISO 8601 duration
+    aggregation_interval="P10D",  # ISO 8601 duration
     last_interval_behavior=LastIntervalBehavior.SHORTEN,
-    resolution=(10, 10),                               # or size=(width, height)
-    other_args={"aggregationInterval": {"of": "P1M"}}, # deep-merged
+    resolution=(10, 10),  # or size=(width, height)
+    other_args={"aggregationInterval": {"of": "P1M"}},  # deep-merged
 )
 ```
 
@@ -180,30 +181,42 @@ Histogram options – use one of:
 
 ```python
 {
-  "status": "OK",
-  "data": [
-    {
-      "interval": {"from": "2020-07-04T00:00:00Z", "to": "2020-07-05T00:00:00Z"},
-      "outputs": {
-        "output_B04": {
-          "bands": {
-            "B0": {
-              "stats": {
-                "min": 0.0874, "max": 0.3164, "mean": 0.1211, "stDev": 0.0332,
-                "sampleCount": 3240, "noDataCount": 0,
-                "percentiles": {"33.0": 0.104, "50.0": 0.1104, "75.0": 0.1252, "90.0": 0.165}
-              },
-              "histogram": {
-                "bins": [{"lowEdge": 0.0, "highEdge": 0.06, "count": 0}, ...],
-                "overflowCount": 4,
-                "underflowCount": 0
-              }
-            }
-          }
+    "status": "OK",
+    "data": [
+        {
+            "interval": {"from": "2020-07-04T00:00:00Z", "to": "2020-07-05T00:00:00Z"},
+            "outputs": {
+                "output_B04": {
+                    "bands": {
+                        "B0": {
+                            "stats": {
+                                "min": 0.0874,
+                                "max": 0.3164,
+                                "mean": 0.1211,
+                                "stDev": 0.0332,
+                                "sampleCount": 3240,
+                                "noDataCount": 0,
+                                "percentiles": {
+                                    "33.0": 0.104,
+                                    "50.0": 0.1104,
+                                    "75.0": 0.1252,
+                                    "90.0": 0.165,
+                                },
+                            },
+                            "histogram": {
+                                "bins": [
+                                    {"lowEdge": 0.0, "highEdge": 0.06, "count": 0},
+                                    ...,
+                                ],
+                                "overflowCount": 4,
+                                "underflowCount": 0,
+                            },
+                        }
+                    }
+                }
+            },
         }
-      }
-    }
-  ]
+    ],
 }
 ```
 

@@ -11,13 +11,13 @@ from sentinel_hub.constants import (
     SHConstants,
 )
 from sentinel_hub.data_collections import DataCollection
-from sentinel_hub.evalscript import generate_evalscript
 from sentinel_hub.download import (
     DownloadClient,
     DownloadRequest,
     SHDownloadClient,
     SHSession,
 )
+from sentinel_hub.evalscript import generate_evalscript
 from sentinel_hub.exception import DownloadFailedException
 from sentinel_hub.geo_utils import (
     bbox_to_dimensions,

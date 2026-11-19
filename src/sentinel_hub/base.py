@@ -172,12 +172,11 @@ class DataRequest(metaclass=ABCMeta):
         if not self.is_valid_request():
             raise ValueError("Cannot obtain data because request is invalid")
 
-        if save_data:
-            if self.data_folder is None:
-                raise ValueError(
-                    "Request parameter `data_folder` is not specified. "
-                    "In order to save data please set `data_folder` to location on your disk."
-                )
+        if save_data and self.data_folder is None:
+            raise ValueError(
+                "Request parameter `data_folder` is not specified. "
+                "In order to save data please set `data_folder` to location on your disk."
+            )
 
         for download_request in self.download_list:
             download_request.save_response = save_data
