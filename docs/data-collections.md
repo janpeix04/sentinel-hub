@@ -19,6 +19,7 @@ Collections are members of the `DataCollection` enum.
 | `DataCollection.SENTINEL1` and variants (see below) | `sentinel-1-grd` | GRD (Ground Range Detected SAR) | |
 | `DataCollection.SENTINEL3_OLCI` | `sentinel-3-olci` | L1B (top-of-atmosphere, 300 m) | |
 | `DataCollection.SENTINEL3_SLSTR` | `sentinel-3-slstr` | L1B (top-of-atmosphere, 500 m / 1 km) | ✅ |
+| `DataCollection.SENTINEL5P` | `sentinel-5p-l2` | L2 (atmospheric trace gases, aerosols, clouds) | |
 
 All point at the CDSE Sentinel Hub service (`ServiceUrl.CDSE`).
 
@@ -28,7 +29,8 @@ from sentinel_hub import DataCollection
 DataCollection.get_available_collections()
 # [<DataCollection.SENTINEL2_L1C: ...>, <DataCollection.SENTINEL2_L2A: ...>,
 #  <DataCollection.SENTINEL1: ...>, <DataCollection.SENTINEL1_IW: ...>, ...,
-#  <DataCollection.SENTINEL3_OLCI: ...>, <DataCollection.SENTINEL3_SLSTR: ...>]
+#  <DataCollection.SENTINEL3_OLCI: ...>, <DataCollection.SENTINEL3_SLSTR: ...>,
+#  <DataCollection.SENTINEL5P: ...>]
 ```
 
 ### Sentinel-1 GRD
@@ -90,6 +92,29 @@ SHRequest.input_data(
     slstr_day, maxcc=0.2, other_args={"dataFilter": {"view": "OBLIQUE"}}
 )
 ```
+
+### Sentinel-5P L2
+
+TROPOMI Level-2 products: trace-gas columns, aerosol indices and cloud properties
+([CDSE S5PL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S5PL2.html)).
+There is no cloud-cover filter, so `maxcc` does not apply. Pass these options through
+`other_args`:
+
+- **`timeliness`** (`dataFilter`): `NRTI` (near real-time), `OFFL` (offline) or `RPRO`
+  (reprocessed). If unset, the service prefers `RPRO`, then `OFFL`, then `NRTI`.
+- **`minQa`** (`processing`): minimum `qa_value` in percent (0–100). Pixels below it are
+  masked out. The default is 75 for `NO2` and 50 for the other products.
+
+```python
+SHRequest.input_data(
+    DataCollection.SENTINEL5P,
+    time_interval=("2024-06-01", "2024-06-01"),
+    other_args={"dataFilter": {"timeliness": "OFFL"}, "processing": {"minQa": 75}},
+)
+```
+
+With the default simple mosaicking, the service only uses data from the 24 hours before the
+end of `time_interval`.
 
 ## Inspecting a collection
 
@@ -172,6 +197,21 @@ on the collection variant (see [Sentinel-1 GRD](#sentinel-1-grd)).
 The Process API has no 32-bit integer output type, so `generate_evalscript` rejects
 `QUALITY_FLAGS`. Decode it in a custom evalscript with `decodeS3OLCIQualityFlags` instead.
 
+**Sentinel-5P bands** – all `float32`, one unit each:
+
+| Bands | Unit | Quantity |
+|---|---|---|
+| `CO`, `HCHO`, `NO2`, `O3`, `SO2` | `MOL_M2` | Column density (mol/m²); `HCHO` and `NO2` are tropospheric |
+| `CH4` | `PPB` | Column-averaged dry-air mixing ratio |
+| `AER_AI_340_380`, `AER_AI_354_388` | `INDEX` | UV aerosol index |
+| `CLOUD_BASE_PRESSURE`, `CLOUD_TOP_PRESSURE` | `PASCALS` | Cloud pressure |
+| `CLOUD_BASE_HEIGHT`, `CLOUD_TOP_HEIGHT` | `METERS` | Cloud height |
+| `CLOUD_OPTICAL_THICKNESS` | `OPTICAL_DEPTH` | Cloud optical thickness |
+| `CLOUD_FRACTION` | `FRACTION` | Effective radiometric cloud fraction |
+
+The only metaband is `dataMask` (`DN`, `bool`). Use it to tell no-data pixels apart from real
+zero values.
+
 ```python
 from sentinel_hub.data_collections_bands import Unit
 
@@ -238,6 +278,7 @@ Sentinel-1 (`collection.is_sentinel1`). `orbit_direction` is sent for any collec
 | `collection.define_from(name, **params)` | Derive a new collection |
 | `collection.is_sentinel1` | `True` for Sentinel-1 collections |
 | `collection.is_sentinel3` | `True` for Sentinel-3 collections |
+| `collection.is_sentinel5p` | `True` for Sentinel-5P collections |
 | `collection.contains_orbit_direction(direction)` | Whether the collection includes acquisitions in that orbit direction |
 | `DataCollection.get_available_collections()` | List all members, including custom ones |
 | `collection.value` | The underlying `DataCollectionDefinition` |

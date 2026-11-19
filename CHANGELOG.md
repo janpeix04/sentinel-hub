@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/data-collections.md`.
 - **Sentinel-3** – `DataCollection.SENTINEL3_OLCI` and `SENTINEL3_SLSTR` (L1B) with band and
   metaband specs, and `DataCollection.is_sentinel3`.
+- **Sentinel-5P** – `DataCollection.SENTINEL5P` (TROPOMI L2) with trace-gas, aerosol and
+  cloud bands, and `DataCollection.is_sentinel5p`.
 
 ### Changed
 
