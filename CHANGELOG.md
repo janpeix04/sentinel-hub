@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Statistical API** – `SHStatistical` for statistics, percentiles and histograms per
   aggregation interval, with the `SHStatistical.aggregation` helper and the
   `LastIntervalBehavior` enum. Documented in `docs/statistical-api.md`.
+- **Sentinel-1 GRD** – `DataCollection.SENTINEL1` plus `SENTINEL1_IW`, `SENTINEL1_EW` and
+  `SENTINEL1_EW_SH` variants (each with `_ASC` / `_DES`), with band and metaband specs.
+  New collection fields `swath_mode`, `polarization`, `resolution` and `orbit_direction`
+  are sent as Process / Statistical API `dataFilter` entries; `OrbitDirection` enum,
+  `DataCollection.is_sentinel1` and `contains_orbit_direction`. Documented in
+  `docs/data-collections.md`.
 
 ## [0.1.0] - 2026-11-19
 

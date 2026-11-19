@@ -16,15 +16,50 @@ Collections are members of the `DataCollection` enum.
 |---|---|---|---|
 | `DataCollection.SENTINEL2_L1C` | `sentinel-2-l1c` | L1C (top-of-atmosphere) | ✅ |
 | `DataCollection.SENTINEL2_L2A` | `sentinel-2-l2a` | L2A (bottom-of-atmosphere) | ✅ |
+| `DataCollection.SENTINEL1` and variants (see below) | `sentinel-1-grd` | GRD (Ground Range Detected SAR) | |
 
-Both point at the CDSE Sentinel Hub service (`ServiceUrl.CDSE`).
+All point at the CDSE Sentinel Hub service (`ServiceUrl.CDSE`).
 
 ```python
 from sentinel_hub import DataCollection
 
 DataCollection.get_available_collections()
-# [<DataCollection.SENTINEL2_L1C: ...>, <DataCollection.SENTINEL2_L2A: ...>]
+# [<DataCollection.SENTINEL2_L1C: ...>, <DataCollection.SENTINEL2_L2A: ...>,
+#  <DataCollection.SENTINEL1: ...>, <DataCollection.SENTINEL1_IW: ...>, ...]
 ```
+
+### Sentinel-1 GRD
+
+All Sentinel-1 collections share the `sentinel-1-grd` identifier. The variants differ only in
+the filters they add to the request's `dataFilter`, so the service returns just the matching
+acquisitions ([CDSE S1GRD docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S1GRD.html)):
+
+| Enum member | `acquisitionMode` | `polarization` | `resolution` | `orbitDirection` | Bands |
+|---|---|---|---|---|---|
+| `SENTINEL1` | – | – | – | – (both) | `VV HH VH HV` |
+| `SENTINEL1_IW` | `IW` | `DV` | `HIGH` | – (both) | `VV VH` |
+| `SENTINEL1_IW_ASC` / `_DES` | `IW` | `DV` | `HIGH` | `ASCENDING` / `DESCENDING` | `VV VH` |
+| `SENTINEL1_EW` | `EW` | `DH` | `MEDIUM` | – (both) | `HH HV` |
+| `SENTINEL1_EW_ASC` / `_DES` | `EW` | `DH` | `MEDIUM` | `ASCENDING` / `DESCENDING` | `HH HV` |
+| `SENTINEL1_EW_SH` | `EW` | `SH` | `MEDIUM` | – (both) | `HH` |
+| `SENTINEL1_EW_SH_ASC` / `_DES` | `EW` | `SH` | `MEDIUM` | `ASCENDING` / `DESCENDING` | `HH` |
+
+`SENTINEL1` applies no filters and lists all four polarisation bands. Only the bands present
+in a product can actually be returned (an IW `DV` product has `VV` and `VH`, not `HH`), so
+prefer a variant when you know the mode you need. Most land imagery is IW `DV`; EW is
+mostly used over polar regions and sea ice.
+
+For other combinations, such as Stripmap mode or a single polarisation, derive a collection:
+
+```python
+s1_sm = DataCollection.SENTINEL1.define_from(
+    "SENTINEL1_SM_VV", swath_mode="SM", polarization="SV", resolution="HIGH"
+)
+```
+
+Processing options such as `backCoeff`, `orthorectify`, `demInstance` or `speckleFilter`
+are set per request, not on the collection. Pass them through `other_args`
+(see [Process API](process-api.md#input-data)).
 
 ## Inspecting a collection
 
@@ -72,6 +107,19 @@ tuples; the first entry is the default.
 | `SNW` (snow), `CLD` (cloud) probability | `PERCENT` | `uint8` | | ✅ |
 | `SCL` (scene classification) | `DN` | `uint8` | | ✅ |
 
+**Sentinel-1 bands** – `VV`, `HH`, `VH`, `HV` in `LINEAR_POWER` (`float32`); typical range
+0–0.5, convert to decibels (`10 * log10(x)`) for visualisation. The available subset depends
+on the collection variant (see [Sentinel-1 GRD](#sentinel-1-grd)).
+
+**Sentinel-1 metabands:**
+
+| Metaband | Unit | Output type | Requires |
+|---|---|---|---|
+| `localIncidenceAngle` | `DEGREES` | `float32` | `orthorectify: true` |
+| `scatteringArea` | `DN` | `float32` | `backCoeff: GAMMA0_TERRAIN` |
+| `shadowMask` | `DN` | `uint8` | `backCoeff: GAMMA0_TERRAIN` |
+| `dataMask` | `DN` | `bool` | – |
+
 ```python
 from sentinel_hub.data_collections_bands import Unit
 
@@ -114,7 +162,7 @@ Rules:
 
 ## Reference
 
-`DataCollection.define(name, *, api_id, catalog_id, service_url, collection_type, sensor_type, processing_level, bands, metabands, has_cloud_coverage)`
+`DataCollection.define(name, *, api_id, catalog_id, service_url, collection_type, sensor_type, processing_level, swath_mode, polarization, resolution, orbit_direction, bands, metabands, has_cloud_coverage)`
 
 | Parameter | Meaning |
 |---|---|
@@ -122,13 +170,21 @@ Rules:
 | `catalog_id` | Identifier used in Catalog API searches |
 | `service_url` | Base URL the collection is restricted to (overrides `SHConfig.sh_base_url` in requests) |
 | `collection_type`, `sensor_type`, `processing_level` | Descriptive metadata |
+| `swath_mode` | Sentinel-1 only: `dataFilter.acquisitionMode` – `IW`, `EW`, `SM`, `WV` |
+| `polarization` | Sentinel-1 only: `dataFilter.polarization` – `DV`, `DH`, `SV`, `SH`, `HH`, `HV`, `VV`, `VH` |
+| `resolution` | Sentinel-1 only: `dataFilter.resolution` – `HIGH`, `MEDIUM` |
+| `orbit_direction` | Sentinel-1 only: `dataFilter.orbitDirection` – `ASCENDING`, `DESCENDING`; `BOTH` adds no filter (see `OrbitDirection`) |
 | `bands`, `metabands` | Tuples of `Band` |
 | `has_cloud_coverage` | Whether `maxcc` filtering makes sense |
+
+The Sentinel-1 filters are only sent when `collection_type` is Sentinel-1 (`collection.is_sentinel1`).
 
 | Method / property | Description |
 |---|---|
 | `DataCollection.define(...)` | Create a new collection |
 | `collection.define_from(name, **params)` | Derive a new collection |
+| `collection.is_sentinel1` | `True` for Sentinel-1 collections |
+| `collection.contains_orbit_direction(direction)` | Whether the collection includes acquisitions in that orbit direction |
 | `DataCollection.get_available_collections()` | List all members, including custom ones |
 | `collection.value` | The underlying `DataCollectionDefinition` |
 | `definition.derive(**params)` | New definition with overridden fields |
