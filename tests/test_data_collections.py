@@ -150,6 +150,9 @@ def test_custom_collection_pickling() -> None:
         DataCollection.SENTINEL1_EW_SH_DES,
         DataCollection.SENTINEL3_OLCI,
         DataCollection.SENTINEL3_SLSTR,
+        DataCollection.SENTINEL3_OLCI_L2,
+        DataCollection.SENTINEL3_SLSTR_L2,
+        DataCollection.SENTINEL3_SYNERGY_L2,
         DataCollection.SENTINEL5P,
     ],
 )
@@ -190,6 +193,7 @@ def test_sentinel2_definitions(
         "data_collection",
         "collection_id",
         "sensor_type",
+        "processing_level",
         "has_cloud_coverage",
         "band_names",
         "metaband_names",
@@ -199,6 +203,7 @@ def test_sentinel2_definitions(
             DataCollection.SENTINEL3_OLCI,
             "sentinel-3-olci",
             "OLCI",
+            "L1B",
             False,
             [f"B{index:02}" for index in range(1, 22)],
             [
@@ -218,9 +223,73 @@ def test_sentinel2_definitions(
             DataCollection.SENTINEL3_SLSTR,
             "sentinel-3-slstr",
             "SLSTR",
+            "L1B",
             True,
             ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "F1", "F2"],
             ["dataMask"],
+        ),
+        (
+            DataCollection.SENTINEL3_OLCI_L2,
+            "sentinel-3-olci-l2",
+            "OLCI",
+            "L2",
+            True,
+            [
+                "GIFAPAR",
+                "IWV_L",
+                "OTCI",
+                "RC681",
+                "RC865",
+                "IWV_W",
+                "CHL_OC4ME",
+                "CHL_NN",
+                "TSM_NN",
+                "PAR",
+                "KD490_M07",
+                "ADG443_NN",
+                "A865",
+                "T865",
+                *(f"B{index:02}" for index in [*range(1, 13), 16, 17, 18, 21]),
+            ],
+            ["LQSF", "dataMask"],
+        ),
+        (
+            DataCollection.SENTINEL3_SLSTR_L2,
+            "sentinel-3-slstr-l2",
+            "SLSTR",
+            "L2",
+            True,
+            ["LST", "LST_uncertainty", "NDVI"],
+            ["CLOUD", "CONFIDENCE", "BAYES", "POINTING", "dataMask"],
+        ),
+        (
+            DataCollection.SENTINEL3_SYNERGY_L2,
+            "sentinel-3-synergy-l2",
+            "OLCI-SLSTR",
+            "L2",
+            False,
+            [
+                *(f"B{index:02}" for index in [*range(1, 13), 16, 17, 18, 21]),
+                "S1",
+                "S2",
+                "S3",
+                "S5",
+                "S6",
+                *(
+                    f"{name}_{suffix}"
+                    for suffix in ["V10", "VG1"]
+                    for name in ["B0", "B2", "B3", "MIR", "NDVI", "OG", "WVG", "AG"]
+                ),
+                "TOA_NDVI_VG1",
+            ],
+            [
+                *(
+                    f"{name}_{suffix}"
+                    for suffix in ["V10", "VG1"]
+                    for name in ["SAA", "SZA", "VAA", "VZA"]
+                ),
+                "dataMask",
+            ],
         ),
     ],
 )
@@ -228,6 +297,7 @@ def test_sentinel3_definitions(
     data_collection: DataCollection,
     collection_id: str,
     sensor_type: str,
+    processing_level: str,
     has_cloud_coverage: bool,
     band_names: list[str],
     metaband_names: list[str],
@@ -236,7 +306,7 @@ def test_sentinel3_definitions(
     assert data_collection.catalog_id == collection_id
     assert data_collection.service_url == DataCollection.SENTINEL2_L2A.service_url
     assert data_collection.sensor_type == sensor_type
-    assert data_collection.processing_level == "L1B"
+    assert data_collection.processing_level == processing_level
     assert data_collection.has_cloud_coverage is has_cloud_coverage
     assert data_collection.orbit_direction is None
     assert data_collection.is_sentinel3
@@ -253,6 +323,21 @@ def test_sentinel3_definitions(
         (DataCollection.SENTINEL3_SLSTR, "S6", (Unit.REFLECTANCE, Unit.RADIANCE)),
         (DataCollection.SENTINEL3_SLSTR, "S7", (Unit.BRIGHTNESS_TEMPERATURE,)),
         (DataCollection.SENTINEL3_SLSTR, "F2", (Unit.BRIGHTNESS_TEMPERATURE,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "B01", (Unit.REFLECTANCE,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "GIFAPAR", (Unit.FRACTION,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "CHL_NN", (Unit.LOG10_MILLIGRAMS_M3,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "TSM_NN", (Unit.LOG10_GRAMS_M2,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "PAR", (Unit.MICROEINSTEINS_S_M2,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "KD490_M07", (Unit.LOG10_1_M,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "A865", (Unit.ANGSTROM_EXPONENT,)),
+        (DataCollection.SENTINEL3_OLCI_L2, "T865", (Unit.OPTICAL_DEPTH,)),
+        (DataCollection.SENTINEL3_SLSTR_L2, "LST", (Unit.KELVIN,)),
+        (DataCollection.SENTINEL3_SLSTR_L2, "NDVI", (Unit.INDEX,)),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "S5", (Unit.REFLECTANCE,)),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "MIR_VG1", (Unit.REFLECTANCE,)),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "OG_V10", (Unit.ATMCM,)),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "WVG_VG1", (Unit.GRAMS_CM2,)),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "AG_V10", (Unit.OPTICAL_DEPTH,)),
     ],
 )
 def test_sentinel3_band_units(

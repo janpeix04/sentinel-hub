@@ -683,6 +683,9 @@ def test_input_data_sentinel1_with_other_filters() -> None:
     [
         (DataCollection.SENTINEL3_OLCI, "sentinel-3-olci"),
         (DataCollection.SENTINEL3_SLSTR, "sentinel-3-slstr"),
+        (DataCollection.SENTINEL3_OLCI_L2, "sentinel-3-olci-l2"),
+        (DataCollection.SENTINEL3_SLSTR_L2, "sentinel-3-slstr-l2"),
+        (DataCollection.SENTINEL3_SYNERGY_L2, "sentinel-3-synergy-l2"),
     ],
 )
 def test_input_data_sentinel3(data_collection: DataCollection, api_id: str) -> None:
