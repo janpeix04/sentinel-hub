@@ -1,8 +1,9 @@
 from sentinel_hub._version import __version__
-from sentinel_hub.api import SHCatalog, SHRequest
+from sentinel_hub.api import SHCatalog, SHRequest, SHStatistical
 from sentinel_hub.config import SHConfig
 from sentinel_hub.constants import (
     CRS,
+    LastIntervalBehavior,
     MimeType,
     MosaickingOrder,
     ResamplingType,

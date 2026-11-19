@@ -329,3 +329,21 @@ class MosaickingOrder(Enum):
     MOST_RECENT = "mostRecent"
     LEAST_RECENT = "leastRecent"
     LEAST_CC = "leastCC"
+
+
+class LastIntervalBehavior(Enum):
+    """
+    Enum constant class for handling the last aggregation interval of a Statistical API request
+    when the time range is not divisible by the aggregation interval.
+    """
+
+    SKIP = "SKIP"
+    SHORTEN = "SHORTEN"
+    EXTEND = "EXTEND"
+
+    @classmethod
+    def _missing_(cls, value: object) -> LastIntervalBehavior:
+        # This triggers if value is not found, before raising an error (see Enum docs). Makes class case-insensitive.
+        if isinstance(value, str) and value.upper() in cls._value2member_map_:
+            return cls(value.upper())
+        return super()._missing_(value)
