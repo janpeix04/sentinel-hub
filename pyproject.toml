@@ -3,6 +3,8 @@ name = "sentinel-hub"
 version = "0.1.0"
 description = "Python client library for the Sentinel Hub services."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Jan", email = "j.peix04@gmail.com" }
 ]

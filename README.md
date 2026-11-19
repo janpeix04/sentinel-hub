@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-2f7fe0" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/platform-CDSE-103463" alt="Copernicus Data Space Ecosystem">
   <img src="https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white" alt="Tested with pytest">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 ## Table of Contents
@@ -121,8 +122,7 @@ uv run pytest
 
 ## License
 
-No license has been chosen for this project yet. Until a `LICENSE` file is added, all
-rights are reserved by the author.
+This project is licensed under the [MIT License](LICENSE).
 
 Sentinel data is provided by the
 [Copernicus Programme](https://www.copernicus.eu/) under the
