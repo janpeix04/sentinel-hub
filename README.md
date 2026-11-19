@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.14%2B-3776AB?logo=python&logoColor=white" alt="Python 3.14+">
-  <img src="https://img.shields.io/badge/version-0.1.0-2f7fe0" alt="Version 0.1.0">
+  <img src="https://img.shields.io/badge/version-0.2.0-2f7fe0" alt="Version 0.2.0">
   <img src="https://img.shields.io/badge/platform-CDSE-103463" alt="Copernicus Data Space Ecosystem">
   <img src="https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white" alt="Tested with pytest">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
@@ -44,10 +44,10 @@ Requires **Python 3.14+**. The package is not on PyPI yet, so install it from Gi
 
 ```bash
 # with uv
-uv add git+https://github.com/janpeix04/sentinel-hub.git@v0.1.0
+uv add git+https://github.com/janpeix04/sentinel-hub.git@v0.2.0
 
 # or with pip
-pip install git+https://github.com/janpeix04/sentinel-hub.git@v0.1.0
+pip install git+https://github.com/janpeix04/sentinel-hub.git@v0.2.0
 ```
 
 Then [set up your CDSE credentials](docs/configuration.md).

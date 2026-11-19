@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-19
+
 ### Added
 
 - **Command line interface** – `sentinel-hub` command (also `python -m sentinel_hub`) with
@@ -35,6 +37,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it, not only Sentinel-1, so it also works for SLSTR.
 - `generate_evalscript` raises a `ValueError` naming the band when a band's output type has
   no Process API sample type, instead of a `KeyError`.
+- Downloads reuse a per-thread `requests.Session`, so HTTP connections are kept alive
+  between requests instead of opened anew each time.
+
+### Fixed
+
+- `SHSession.info` decodes the JWT payload with correct base64url padding.
+- `Retry-After` headers with fractional values no longer raise a `ValueError`.
+- Session sharing reallocates shared memory when a refreshed token no longer fits.
+- Reading a cached request no longer fails when it lacks `timestamp` or `headers`.
+- Download error handlers re-raise the original exception without chaining it to itself.
+- Typos in download error and log messages.
 
 ## [0.1.0] - 2026-11-19
 
@@ -60,5 +73,6 @@ Copernicus Data Space Ecosystem (CDSE).
 - **Documentation** – README and per-topic guides in `docs/`.
 - **License** – MIT.
 
-[Unreleased]: https://github.com/janpeix04/sentinel-hub/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/janpeix04/sentinel-hub/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/janpeix04/sentinel-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/janpeix04/sentinel-hub/releases/tag/v0.1.0
