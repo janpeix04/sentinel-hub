@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from sentinel_hub import DataCollection
-from sentinel_hub.data_collections import DataCollectionDefinition
+from sentinel_hub.data_collections import DataCollectionDefinition, OrbitDirection
 
 
 @pytest.mark.parametrize(
@@ -139,7 +139,14 @@ def test_custom_collection_pickling() -> None:
 
 
 @pytest.mark.parametrize(
-    "data_collection", [DataCollection.SENTINEL2_L1C, DataCollection.SENTINEL2_L2A]
+    "data_collection",
+    [
+        DataCollection.SENTINEL2_L1C,
+        DataCollection.SENTINEL2_L2A,
+        DataCollection.SENTINEL1,
+        DataCollection.SENTINEL1_IW,
+        DataCollection.SENTINEL1_EW_SH_DES,
+    ],
 )
 @pytest.mark.parametrize(
     "attribute",
@@ -171,6 +178,157 @@ def test_sentinel2_definitions(
 ) -> None:
     assert data_collection.catalog_id == catalog_id
     assert data_collection.has_cloud_coverage is has_cloud_coverage
+
+
+@pytest.mark.parametrize(
+    (
+        "data_collection",
+        "swath_mode",
+        "polarization",
+        "resolution",
+        "orbit_direction",
+        "band_names",
+    ),
+    [
+        (
+            DataCollection.SENTINEL1,
+            None,
+            None,
+            None,
+            OrbitDirection.BOTH,
+            ["VV", "HH", "VH", "HV"],
+        ),
+        (DataCollection.SENTINEL1_IW, "IW", "DV", "HIGH", "BOTH", ["VV", "VH"]),
+        (
+            DataCollection.SENTINEL1_IW_ASC,
+            "IW",
+            "DV",
+            "HIGH",
+            "ASCENDING",
+            ["VV", "VH"],
+        ),
+        (
+            DataCollection.SENTINEL1_IW_DES,
+            "IW",
+            "DV",
+            "HIGH",
+            "DESCENDING",
+            ["VV", "VH"],
+        ),
+        (DataCollection.SENTINEL1_EW, "EW", "DH", "MEDIUM", "BOTH", ["HH", "HV"]),
+        (
+            DataCollection.SENTINEL1_EW_ASC,
+            "EW",
+            "DH",
+            "MEDIUM",
+            "ASCENDING",
+            ["HH", "HV"],
+        ),
+        (
+            DataCollection.SENTINEL1_EW_DES,
+            "EW",
+            "DH",
+            "MEDIUM",
+            "DESCENDING",
+            ["HH", "HV"],
+        ),
+        (DataCollection.SENTINEL1_EW_SH, "EW", "SH", "MEDIUM", "BOTH", ["HH"]),
+        (DataCollection.SENTINEL1_EW_SH_ASC, "EW", "SH", "MEDIUM", "ASCENDING", ["HH"]),
+        (
+            DataCollection.SENTINEL1_EW_SH_DES,
+            "EW",
+            "SH",
+            "MEDIUM",
+            "DESCENDING",
+            ["HH"],
+        ),
+    ],
+)
+def test_sentinel1_definitions(
+    data_collection: DataCollection,
+    swath_mode: str | None,
+    polarization: str | None,
+    resolution: str | None,
+    orbit_direction: str,
+    band_names: list[str],
+) -> None:
+    assert data_collection.api_id == "sentinel-1-grd"
+    assert data_collection.catalog_id == "sentinel-1-grd"
+    assert data_collection.service_url == DataCollection.SENTINEL2_L2A.service_url
+    assert data_collection.processing_level == "GRD"
+    assert data_collection.has_cloud_coverage is False
+    assert data_collection.is_sentinel1
+
+    assert data_collection.swath_mode == swath_mode
+    assert data_collection.polarization == polarization
+    assert data_collection.resolution == resolution
+    assert data_collection.orbit_direction == orbit_direction
+
+    assert [band.name for band in data_collection.bands] == band_names
+    assert [band.name for band in data_collection.metabands] == [
+        "localIncidenceAngle",
+        "scatteringArea",
+        "shadowMask",
+        "dataMask",
+    ]
+
+
+def test_sentinel1_collections_are_distinct() -> None:
+    names = [
+        "SENTINEL1",
+        *(
+            f"SENTINEL1_{mode}{suffix}"
+            for mode in ["IW", "EW", "EW_SH"]
+            for suffix in ["", "_ASC", "_DES"]
+        ),
+    ]
+    collections = [DataCollection[name] for name in names]
+
+    assert all(collection.is_sentinel1 for collection in collections)
+    assert len({collection.value for collection in collections}) == len(names)
+
+
+@pytest.mark.parametrize(
+    "data_collection", [DataCollection.SENTINEL2_L1C, DataCollection.SENTINEL2_L2A]
+)
+def test_is_not_sentinel1(data_collection: DataCollection) -> None:
+    assert not data_collection.is_sentinel1
+
+
+@pytest.mark.parametrize(
+    ("data_collection", "orbit_direction", "expected"),
+    [
+        (DataCollection.SENTINEL1, OrbitDirection.ASCENDING, True),
+        (DataCollection.SENTINEL1, OrbitDirection.DESCENDING, True),
+        (DataCollection.SENTINEL1_IW_ASC, OrbitDirection.ASCENDING, True),
+        (DataCollection.SENTINEL1_IW_ASC, "ascending", True),
+        (DataCollection.SENTINEL1_IW_ASC, OrbitDirection.DESCENDING, False),
+        (DataCollection.SENTINEL1_EW_DES, OrbitDirection.DESCENDING, True),
+        (DataCollection.SENTINEL1_EW_DES, OrbitDirection.ASCENDING, False),
+        (DataCollection.SENTINEL2_L2A, OrbitDirection.DESCENDING, True),
+    ],
+)
+def test_contains_orbit_direction(
+    data_collection: DataCollection, orbit_direction: str, expected: bool
+) -> None:
+    assert data_collection.contains_orbit_direction(orbit_direction) is expected
+
+
+def test_define_sentinel1_variant() -> None:
+    data_collection = DataCollection.SENTINEL1.define_from(
+        "SENTINEL1_SM_VV_ASC",
+        swath_mode="SM",
+        polarization="SV",
+        resolution="HIGH",
+        orbit_direction=OrbitDirection.ASCENDING,
+    )
+
+    assert data_collection.is_sentinel1
+    assert data_collection.swath_mode == "SM"
+    assert data_collection.polarization == "SV"
+    assert data_collection.resolution == "HIGH"
+    assert data_collection.orbit_direction == "ASCENDING"
+    assert data_collection.api_id == "sentinel-1-grd"
 
 
 def test_catalog_id_falls_back_to_api_id() -> None:

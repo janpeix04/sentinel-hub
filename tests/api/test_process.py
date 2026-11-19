@@ -614,6 +614,70 @@ def test_input_data_without_filters() -> None:
     assert {**input_data} == {"type": "sentinel-2-l1c"}
 
 
+@pytest.mark.parametrize(
+    ("data_collection", "expected_data_filter"),
+    [
+        (DataCollection.SENTINEL1, None),
+        (
+            DataCollection.SENTINEL1_IW,
+            {"acquisitionMode": "IW", "polarization": "DV", "resolution": "HIGH"},
+        ),
+        (
+            DataCollection.SENTINEL1_IW_ASC,
+            {
+                "acquisitionMode": "IW",
+                "polarization": "DV",
+                "resolution": "HIGH",
+                "orbitDirection": "ASCENDING",
+            },
+        ),
+        (
+            DataCollection.SENTINEL1_EW_SH_DES,
+            {
+                "acquisitionMode": "EW",
+                "polarization": "SH",
+                "resolution": "MEDIUM",
+                "orbitDirection": "DESCENDING",
+            },
+        ),
+    ],
+)
+def test_input_data_sentinel1(
+    data_collection: DataCollection, expected_data_filter: dict[str, Any] | None
+) -> None:
+    input_data = SHRequest.input_data(data_collection=data_collection)
+
+    assert input_data["type"] == "sentinel-1-grd"
+    assert input_data.service_url == data_collection.service_url
+    assert input_data.get("dataFilter") == expected_data_filter
+
+
+def test_input_data_sentinel1_with_other_filters() -> None:
+    input_data = SHRequest.input_data(
+        data_collection=DataCollection.SENTINEL1_IW_DES,
+        time_interval=("2024-06-01", "2024-06-30"),
+        mosaicking_order=MosaickingOrder.MOST_RECENT,
+        other_args={
+            "dataFilter": {"timeliness": "NRT3h"},
+            "processing": {"backCoeff": "GAMMA0_TERRAIN", "orthorectify": True},
+        },
+    )
+
+    assert {**input_data} == {
+        "type": "sentinel-1-grd",
+        "dataFilter": {
+            "timeRange": {"from": "2024-06-01T00:00:00Z", "to": "2024-06-30T23:59:59Z"},
+            "mosaickingOrder": "mostRecent",
+            "acquisitionMode": "IW",
+            "polarization": "DV",
+            "resolution": "HIGH",
+            "orbitDirection": "DESCENDING",
+            "timeliness": "NRT3h",
+        },
+        "processing": {"backCoeff": "GAMMA0_TERRAIN", "orthorectify": True},
+    }
+
+
 @pytest.mark.parametrize("maxcc", [-0.1, 1.1])
 def test_input_data_invalid_maxcc(maxcc: float) -> None:
     with pytest.raises(ValueError):
