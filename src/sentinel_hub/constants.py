@@ -117,3 +117,13 @@ class MimeType(Enum):
             raise ValueError(
                 f"Type {self} is not supported by this method."
             ) from exception
+
+
+class RequestType(Enum):
+    """Enum constant class for GET/POST request type."""
+
+    GET = "GET"
+    POST = "POST"
+    DELETE = "DELETE"
+    PUT = "PUT"
+    PATCH = "PATCH"
