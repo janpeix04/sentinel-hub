@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are sent as Process / Statistical API `dataFilter` entries; `OrbitDirection` enum,
   `DataCollection.is_sentinel1` and `contains_orbit_direction`. Documented in
   `docs/data-collections.md`.
+- **Sentinel-3** – `DataCollection.SENTINEL3_OLCI` and `SENTINEL3_SLSTR` (L1B) with band and
+  metaband specs, and `DataCollection.is_sentinel3`.
+
+### Changed
+
+- `orbit_direction` is now sent as `dataFilter.orbitDirection` for any collection that sets
+  it, not only Sentinel-1, so it also works for SLSTR.
+- `generate_evalscript` raises a `ValueError` naming the band when a band's output type has
+  no Process API sample type, instead of a `KeyError`.
 
 ## [0.1.0] - 2026-11-19
 

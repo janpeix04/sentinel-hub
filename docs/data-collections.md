@@ -17,6 +17,8 @@ Collections are members of the `DataCollection` enum.
 | `DataCollection.SENTINEL2_L1C` | `sentinel-2-l1c` | L1C (top-of-atmosphere) | ✅ |
 | `DataCollection.SENTINEL2_L2A` | `sentinel-2-l2a` | L2A (bottom-of-atmosphere) | ✅ |
 | `DataCollection.SENTINEL1` and variants (see below) | `sentinel-1-grd` | GRD (Ground Range Detected SAR) | |
+| `DataCollection.SENTINEL3_OLCI` | `sentinel-3-olci` | L1B (top-of-atmosphere, 300 m) | |
+| `DataCollection.SENTINEL3_SLSTR` | `sentinel-3-slstr` | L1B (top-of-atmosphere, 500 m / 1 km) | ✅ |
 
 All point at the CDSE Sentinel Hub service (`ServiceUrl.CDSE`).
 
@@ -25,7 +27,8 @@ from sentinel_hub import DataCollection
 
 DataCollection.get_available_collections()
 # [<DataCollection.SENTINEL2_L1C: ...>, <DataCollection.SENTINEL2_L2A: ...>,
-#  <DataCollection.SENTINEL1: ...>, <DataCollection.SENTINEL1_IW: ...>, ...]
+#  <DataCollection.SENTINEL1: ...>, <DataCollection.SENTINEL1_IW: ...>, ...,
+#  <DataCollection.SENTINEL3_OLCI: ...>, <DataCollection.SENTINEL3_SLSTR: ...>]
 ```
 
 ### Sentinel-1 GRD
@@ -60,6 +63,33 @@ s1_sm = DataCollection.SENTINEL1.define_from(
 Processing options such as `backCoeff`, `orthorectify`, `demInstance` or `speckleFilter`
 are set per request, not on the collection. Pass them through `other_args`
 (see [Process API](process-api.md#input-data)).
+
+### Sentinel-3 OLCI and SLSTR
+
+Both are Level-1B products: top-of-atmosphere values with no atmospheric correction.
+
+- **OLCI** ([CDSE S3OLCI docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3OLCI.html))
+  is a 21-band ocean and land colour imager at 300 m. It has no cloud-cover filter, so `maxcc` does
+  not apply.
+- **SLSTR** ([CDSE S3SLSTR docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3SLSTR.html))
+  is a radiometer with 6 optical bands at 500 m and 5 thermal bands at 1 km. It supports `maxcc`
+  and `MosaickingOrder.LEAST_CC`.
+
+SLSTR acquires at night on ascending passes, so the optical bands are usually black there; thermal
+bands work on both. To restrict SLSTR to daytime (descending) passes, set `orbit_direction`; to use
+the oblique (rear) view instead of nadir, pass `view` through `other_args`:
+
+```python
+from sentinel_hub import DataCollection, SHRequest
+from sentinel_hub.data_collections import OrbitDirection
+
+slstr_day = DataCollection.SENTINEL3_SLSTR.define_from(
+    "SENTINEL3_SLSTR_DES", orbit_direction=OrbitDirection.DESCENDING
+)
+SHRequest.input_data(
+    slstr_day, maxcc=0.2, other_args={"dataFilter": {"view": "OBLIQUE"}}
+)
+```
 
 ## Inspecting a collection
 
@@ -120,6 +150,28 @@ on the collection variant (see [Sentinel-1 GRD](#sentinel-1-grd)).
 | `shadowMask` | `DN` | `uint8` | `backCoeff: GAMMA0_TERRAIN` |
 | `dataMask` | `DN` | `bool` | – |
 
+**Sentinel-3 bands** – all `float32`:
+
+| Collection | Bands | Units (default first) |
+|---|---|---|
+| OLCI | `B01` … `B21` | `REFLECTANCE` / `RADIANCE` |
+| SLSTR | `S1 S2 S3 S4 S5 S6` (optical) | `REFLECTANCE` / `RADIANCE` |
+| SLSTR | `S7 S8 S9 F1 F2` (thermal) | `BRIGHTNESS_TEMPERATURE` (kelvin) |
+
+**Sentinel-3 metabands:**
+
+| Metaband | Unit | Output type | OLCI | SLSTR |
+|---|---|---|---|---|
+| `SAA`, `SZA`, `VAA`, `VZA` (sun / view azimuth and zenith) | `DEGREES` | `float32` | ✅ | |
+| `HUMIDITY` | `PERCENT` | `float32` | ✅ | |
+| `SEA_LEVEL_PRESSURE` | `HECTOPASCALS` | `float32` | ✅ | |
+| `TOTAL_COLUMN_OZONE`, `TOTAL_COLUMN_WATER_VAPOUR` | `KG_M2` | `float32` | ✅ | |
+| `QUALITY_FLAGS` (bit-packed) | `DN` | `uint32` | ✅ | |
+| `dataMask` | `DN` | `bool` | ✅ | ✅ |
+
+The Process API has no 32-bit integer output type, so `generate_evalscript` rejects
+`QUALITY_FLAGS`. Decode it in a custom evalscript with `decodeS3OLCIQualityFlags` instead.
+
 ```python
 from sentinel_hub.data_collections_bands import Unit
 
@@ -173,17 +225,19 @@ Rules:
 | `swath_mode` | Sentinel-1 only: `dataFilter.acquisitionMode` – `IW`, `EW`, `SM`, `WV` |
 | `polarization` | Sentinel-1 only: `dataFilter.polarization` – `DV`, `DH`, `SV`, `SH`, `HH`, `HV`, `VV`, `VH` |
 | `resolution` | Sentinel-1 only: `dataFilter.resolution` – `HIGH`, `MEDIUM` |
-| `orbit_direction` | Sentinel-1 only: `dataFilter.orbitDirection` – `ASCENDING`, `DESCENDING`; `BOTH` adds no filter (see `OrbitDirection`) |
+| `orbit_direction` | `dataFilter.orbitDirection` – `ASCENDING`, `DESCENDING`; `BOTH` adds no filter (see `OrbitDirection`). Supported by Sentinel-1 and SLSTR |
 | `bands`, `metabands` | Tuples of `Band` |
 | `has_cloud_coverage` | Whether `maxcc` filtering makes sense |
 
-The Sentinel-1 filters are only sent when `collection_type` is Sentinel-1 (`collection.is_sentinel1`).
+`swath_mode`, `polarization` and `resolution` are only sent when `collection_type` is
+Sentinel-1 (`collection.is_sentinel1`). `orbit_direction` is sent for any collection that sets it.
 
 | Method / property | Description |
 |---|---|
 | `DataCollection.define(...)` | Create a new collection |
 | `collection.define_from(name, **params)` | Derive a new collection |
 | `collection.is_sentinel1` | `True` for Sentinel-1 collections |
+| `collection.is_sentinel3` | `True` for Sentinel-3 collections |
 | `collection.contains_orbit_direction(direction)` | Whether the collection includes acquisitions in that orbit direction |
 | `DataCollection.get_available_collections()` | List all members, including custom ones |
 | `collection.value` | The underlying `DataCollectionDefinition` |
