@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Command line interface** – `sentinel-hub` command (also `python -m sentinel_hub`) with
+  `config`, `collections`, `bands`, `evalscript`, `search`, `process` and `stats` subcommands.
+  Documented in `docs/cli.md`.
 - **Statistical API** – `SHStatistical` for statistics, percentiles and histograms per
   aggregation interval, with the `SHStatistical.aggregation` helper and the
   `LastIntervalBehavior` enum. Documented in `docs/statistical-api.md`.

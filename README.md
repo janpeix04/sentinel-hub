@@ -35,6 +35,7 @@ Highlights:
 - **Statistical API** – get statistics, percentiles and histograms per time interval without downloading images.
 - **Evalscript generator** – build a valid `//VERSION=3` evalscript from a list of band names.
 - **Geometry toolkit** – `BBox`, `Geometry` and `CRS` with reprojection, buffering, partitioning and UTM helpers.
+- **Command line interface** – `sentinel-hub search | process | stats | evalscript | config ...` for the common tasks without writing Python.
 - **Robust downloads** – OAuth2 session handling and caching, automatic retries with back-off, rate-limit handling, multi-threading and on-disk response caching.
 
 ## Installation
@@ -135,6 +136,7 @@ Each topic has its own page in [`docs/`](docs). Pick the one you need:
 | 📥 **Download & sessions** | Download clients, OAuth sessions, retries, rate limits, session sharing | `SHDownloadClient`, `SHSession`, `DownloadRequest` | [download.md](docs/download.md) |
 | 💾 **File I/O** | Reading and writing TIFF, PNG, JP2, JSON, CSV, TAR, … | `read_data`, `write_data` | [io-utils.md](docs/io-utils.md) |
 | 🧩 **Constants** | Formats, resampling, mosaicking order, last interval behavior, service URLs | `MimeType`, `ResamplingType`, `MosaickingOrder`, `LastIntervalBehavior`, `ServiceUrl` | [constants.md](docs/constants.md) |
+| 💻 **Command line** | `sentinel-hub` command: config, search, process, stats, evalscripts | `sentinel-hub --help` | [cli.md](docs/cli.md) |
 | 🚨 **Exceptions & warnings** | Error hierarchy and custom warnings | `DownloadFailedException`, … | [exceptions.md](docs/exceptions.md) |
 
 ## Development
