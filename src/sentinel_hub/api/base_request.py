@@ -40,7 +40,7 @@ class SHBaseApiRequest(DataRequest, metaclass=ABCMeta):
         self.download_list = [
             DownloadRequest(
                 request_type=RequestType.POST,
-                url=f"{base_url}/api/v1/{self._SERVICE_ENDPOINT}",
+                url=f"{base_url}/{self._SERVICE_ENDPOINT}",
                 post_values=self.payload,
                 data_folder=self.data_folder,
                 save_response=bool(self.data_folder),

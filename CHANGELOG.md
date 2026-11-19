@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Statistical API** – `SHStatistical` for statistics, percentiles and histograms per
+  aggregation interval, with the `SHStatistical.aggregation` helper and the
+  `LastIntervalBehavior` enum. Documented in `docs/statistical-api.md`.
+
 ## [0.1.0] - 2026-11-19
 
 First release of `sentinel-hub`, a Python client for the Sentinel Hub APIs on the
@@ -29,4 +37,5 @@ Copernicus Data Space Ecosystem (CDSE).
 - **Documentation** – README and per-topic guides in `docs/`.
 - **License** – MIT.
 
+[Unreleased]: https://github.com/janpeix04/sentinel-hub/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/janpeix04/sentinel-hub/releases/tag/v0.1.0
