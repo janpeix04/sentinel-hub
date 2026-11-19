@@ -6,7 +6,6 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import nullcontext
 from typing import Any
-from xml.etree import ElementTree
 
 import requests
 from tqdm.auto import tqdm
@@ -120,18 +119,12 @@ class DownloadClient:
             self._check_cached_request_is_matching(request, request_path)
             response = DownloadResponse.from_local(request)
 
-        processed_response = self._process_response(request, response)
-
-        if (
-            request.save_response
-            and response_path
-            and (no_local_data or processed_response is not response)
-        ):
-            processed_response.to_local()
+        if request.save_response and response_path and no_local_data:
+            response.to_local()
             logger.debug("Saved response data to %s.", response_path)
 
         if request.return_data:
-            return processed_response
+            return response
         return None
 
     @retry_temporary_errors
@@ -188,15 +181,6 @@ class DownloadClient:
                 f"which matches request saved at {request_path}, but the "
                 "requests are differnt. Possible hash collision."
             )
-
-    def _process_response(
-        self, _: DownloadRequest, response: DownloadResponse
-    ) -> DownloadResponse:
-        """
-        This method is meant to be overwritten by inherited implementations
-        of the client object.
-        """
-        return response
 
     def get_json(
         self,
@@ -255,8 +239,3 @@ class DownloadClient:
             f"Response from {url} was expected to have {extract_key} "
             f"mapping to a dictionary. {explanation}"
         )
-
-    def get_xml(self, url: str, **kwargs: Any) -> ElementTree.ElementTree:
-        """Download request as XML data type."""
-        request = DownloadRequest(url=url, data_type=MimeType.XML, **kwargs)
-        return self._single_download_decoded(request)

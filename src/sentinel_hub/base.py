@@ -1,14 +1,11 @@
 import copy
-import os
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable
-from typing import Any, TypeVar
+from typing import Any
 
 from sentinel_hub.config import SHConfig
 from sentinel_hub.download import DownloadClient, DownloadRequest
 from sentinel_hub.types import JsonDict
-
-_T = TypeVar("_T")
 
 
 class DataRequest(metaclass=ABCMeta):
@@ -31,7 +28,6 @@ class DataRequest(metaclass=ABCMeta):
         self.config = config or SHConfig()
 
         self.download_list: list[DownloadRequest] = []
-        self.folder_list: list[str] = []
         self.create_request()
 
     @abstractmethod
@@ -183,9 +179,6 @@ class DataRequest(metaclass=ABCMeta):
                     "In order to save data please set `data_folder` to location on your disk."
                 )
 
-            for folder in self.folder_list:
-                os.makedirs(os.path.join(self.data_folder, folder), exist_ok=True)
-
         for download_request in self.download_list:
             download_request.save_response = save_data
             download_request.return_data = return_data
@@ -210,15 +203,15 @@ class FeatureIterator[T](metaclass=ABCMeta):
         self.params = params or {}
 
         self.index = 0
-        self.features: list[_T] = []
+        self.features: list[T] = []
         self.finished = False
 
-    def __iter__(self) -> FeatureIterator[_T]:
+    def __iter__(self) -> FeatureIterator[T]:
         """Method called at the beginning of a new iteration."""
         self.index = 0
         return self
 
-    def __next__(self) -> _T:
+    def __next__(self) -> T:
         """Method called to provide the next feature in iteration."""
         while self.index >= len(self.features) and not self.finished:
             new_features = self._fetch_features()
@@ -231,5 +224,5 @@ class FeatureIterator[T](metaclass=ABCMeta):
         raise StopIteration
 
     @abstractmethod
-    def _fetch_features(self) -> Iterable[_T]:
+    def _fetch_features(self) -> Iterable[T]:
         """Collects and returns more features from the service."""

@@ -1,10 +1,5 @@
 import functools
-import functools
 import mimetypes
-import re
-import warnings
-from collections.abc import Callable
-from enum import Enum, EnumMeta
 import re
 import warnings
 from collections.abc import Callable
@@ -16,13 +11,7 @@ import pyproj
 import utm
 from aenum import extend_enum
 
-import numpy as np
-import pyproj
-import utm
-from aenum import extend_enum
-
 from sentinel_hub import __version__
-from sentinel_hub.exception import SHUserWarning
 from sentinel_hub.exception import SHUserWarning
 
 
@@ -102,12 +91,6 @@ class MimeType(Enum):
             [MimeType.TIFF, MimeType.JPG, MimeType.JP2, MimeType.PNG]
         )
 
-    def is_api_format(self) -> bool:
-        """Checks if mime type is supported by Sentinel Hub API"""
-        return self in frozenset(
-            [MimeType.TIFF, MimeType.JPG, MimeType.PNG, MimeType.JSON]
-        )
-
     def get_string(self) -> str:
         """Get file format as string."""
         if self is MimeType.JP2:
@@ -117,30 +100,6 @@ class MimeType(Enum):
         if self is MimeType.RAW:
             return self.value
         return mimetypes.types_map["." + self.value]
-
-    def matches_extension(self, path: str) -> bool:
-        """
-        Checks if mime type enum is used as the lsat file extension in
-        given file path.
-        """
-        return path.endswith(f".{self.extension}")
-
-    def get_expected_max_value(self) -> float | int:
-        """
-        Returns max value of image `MimeType` format and raises an error
-        if it is not an image format.
-        """
-        try:
-            return {
-                MimeType.TIFF: 65535,
-                MimeType.JPG: 255,
-                MimeType.PNG: 255,
-                MimeType.JP2: 10000,
-            }[self]
-        except KeyError as exception:
-            raise ValueError(
-                f"Type {self} is not supported by this method."
-            ) from exception
 
 
 class RequestType(Enum):
@@ -156,7 +115,6 @@ class RequestType(Enum):
 class SHConstants:
     """Common constants used in various requests."""
 
-    LATEST = "latest"
     HEADERS: ClassVar[dict[str, str]] = {"User-Agent": f"sentinel-hub/v{__version__}"}
 
 

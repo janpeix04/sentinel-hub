@@ -36,7 +36,6 @@ class DownloadRequest:
     data_folder: str | None = None
     filename: str | None = None
     return_data: bool = True
-    extra_params: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Additional parsing of init parameters."""

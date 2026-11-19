@@ -17,7 +17,6 @@ class SHRateLimit:
     """
 
     RETRY_HEADER = "Retry-After"
-    UNITS_SPENT_HEADER = "X-ProcessingUnits-Spent"
 
     def __init__(
         self,
