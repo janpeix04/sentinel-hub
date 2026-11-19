@@ -1,0 +1,32 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-11-19
+
+First release of `sentinel-hub`, a Python client for the Sentinel Hub APIs on the
+Copernicus Data Space Ecosystem (CDSE).
+
+### Added
+
+- **Configuration** – `SHConfig` with `config.toml` profiles, `SH_CLIENT_ID` /
+  `SH_CLIENT_SECRET` / `SH_PROFILE` environment variables and masked credentials.
+- **Data collections** – predefined `SENTINEL2_L1C` and `SENTINEL2_L2A` with band and
+  metaband specs; custom collections via `DataCollection.define` / `define_from`.
+- **Catalog API** – `SHCatalog` for service info, collections, features and STAC search
+  (time, bbox, geometry, IDs, CQL2 filters) with lazy pagination.
+- **Process API** – `SHRequest` with input data filters, data fusion, bbox / geometry
+  bounds, size or resolution, single and multi-output (TAR) responses, and on-disk caching.
+- **Evalscripts** – `generate_evalscript` builds `//VERSION=3` evalscripts from band lists.
+- **Geometry** – `BBox`, `Geometry` and `CRS` with reprojection, buffering and partitioning.
+- **Utilities** – geo helpers (`bbox_to_dimensions`, UTM conversions), time helpers
+  (`parse_time_interval`, `filter_times`, …) and file I/O (`read_data`, `write_data`).
+- **Downloads** – OAuth2 `SHSession`, `SHDownloadClient` with retries and back-off,
+  rate-limit handling, multi-threading, session caching and cross-process session sharing.
+- **Documentation** – README and per-topic guides in `docs/`.
+- **License** – MIT.
+
+[0.1.0]: https://github.com/janpeix04/sentinel-hub/releases/tag/v0.1.0
