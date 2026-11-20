@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **MCP server** – `sentinel-hub-mcp` (also `python -m sentinel_hub.mcp_server`) exposes
+  `list_collections`, `list_bands`, `generate_evalscript`, `show_config`, `search_catalog`,
+  `process_image` and `compute_statistics` to MCP clients. Install with the new `mcp` extra.
+  The checked-in `.mcp.json` registers it for Claude Code. Documented in `docs/mcp.md`.
+
+### Removed
+
+- **Custom data collections** – `DataCollection.define` and `DataCollection.define_from` are
+  removed; only the predefined collections can be used. Pass extra filters such as a
+  Sentinel-1 acquisition mode or an orbit direction per request through
+  `other_args={"dataFilter": {...}}` instead. `DataCollection` is now a standard-library `Enum`.
+
 ## [0.2.0] - 2026-11-19
 
 ### Added

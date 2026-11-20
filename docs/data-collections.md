@@ -2,12 +2,12 @@
 
 A **data collection** tells the library which dataset to query and how: its Process API
 identifier, its Catalog API identifier, the service it lives on, and which bands it offers.
-Collections are members of the `DataCollection` enum.
+Collections are members of the `DataCollection` enum. Only the predefined collections below
+are supported; new collections cannot be defined at runtime.
 
 - [Predefined collections](#predefined-collections)
 - [Inspecting a collection](#inspecting-a-collection)
 - [Bands and metabands](#bands-and-metabands)
-- [Defining custom collections](#defining-custom-collections)
 - [Reference](#reference)
 
 ## Predefined collections
@@ -57,11 +57,19 @@ in a product can actually be returned (an IW `DV` product has `VV` and `VH`, not
 prefer a variant when you know the mode you need. Most land imagery is IW `DV`; EW is
 mostly used over polar regions and sea ice.
 
-For other combinations, such as Stripmap mode or a single polarisation, derive a collection:
+For other combinations, such as Stripmap mode or a single polarisation, start from
+`SENTINEL1` and pass the filters per request through `other_args`:
 
 ```python
-s1_sm = DataCollection.SENTINEL1.define_from(
-    "SENTINEL1_SM_VV", swath_mode="SM", polarization="SV", resolution="HIGH"
+SHRequest.input_data(
+    DataCollection.SENTINEL1,
+    other_args={
+        "dataFilter": {
+            "acquisitionMode": "SM",
+            "polarization": "SV",
+            "resolution": "HIGH",
+        }
+    },
 )
 ```
 
@@ -84,18 +92,16 @@ Level-2 collections (derived geophysical products).
   and `MosaickingOrder.LEAST_CC`.
 
 SLSTR acquires at night on ascending passes, so the optical bands are usually black there; thermal
-bands work on both. To restrict SLSTR to daytime (descending) passes, set `orbit_direction`; to use
-the oblique (rear) view instead of nadir, pass `view` through `other_args`:
+bands work on both. To restrict SLSTR to daytime (descending) passes, pass `orbitDirection`, and to
+use the oblique (rear) view instead of nadir, pass `view`, both through `other_args`:
 
 ```python
 from sentinel_hub import DataCollection, SHRequest
-from sentinel_hub.data_collections import OrbitDirection
 
-slstr_day = DataCollection.SENTINEL3_SLSTR.define_from(
-    "SENTINEL3_SLSTR_DES", orbit_direction=OrbitDirection.DESCENDING
-)
 SHRequest.input_data(
-    slstr_day, maxcc=0.2, other_args={"dataFilter": {"view": "OBLIQUE"}}
+    DataCollection.SENTINEL3_SLSTR,
+    maxcc=0.2,
+    other_args={"dataFilter": {"orbitDirection": "DESCENDING", "view": "OBLIQUE"}},
 )
 ```
 
@@ -108,7 +114,7 @@ SHRequest.input_data(
   `MosaickingOrder.LEAST_CC`.
 - **SLSTR L2** ([CDSE S3SLSTRL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3SLSTRL2.html))
   has land surface temperature (`LST`) with its uncertainty, `NDVI`, and the cloud and quality
-  bitmasks. It supports `maxcc`, `MosaickingOrder.LEAST_CC` and `orbit_direction`. LST comes
+  bitmasks. It supports `maxcc`, `MosaickingOrder.LEAST_CC` and an `orbitDirection` filter (via `other_args`). LST comes
   from thermal bands, so both day and night passes are usable.
 - **SYN L2** ([CDSE S3SYNL2 docs](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/S3SYNL2.html))
   combines OLCI and SLSTR into surface reflectance (`SY_2_SYN`). The same collection also
@@ -283,40 +289,11 @@ b04.output_types  # (numpy.float32, numpy.uint16)
 Band specs are used by the [evalscript generator](evalscript.md) to pick units and
 sample types.
 
-## Defining custom collections
-
-Use `DataCollection.define` for a brand-new collection, e.g. a BYOC collection:
-
-```python
-byoc = DataCollection.define(
-    "MY_BYOC",
-    api_id="byoc-1234abcd-...",
-    catalog_id="byoc-1234abcd-...",
-    service_url="https://sh.dataspace.copernicus.eu",
-)
-```
-
-Or derive one from an existing collection with `define_from`, overriding only what changes:
-
-```python
-s2_custom = DataCollection.SENTINEL2_L2A.define_from(
-    "SENTINEL2_L2A_CUSTOM", service_url="https://my-mirror.example.com"
-)
-```
-
-Rules:
-
-- Only `name` is required; parameters a use case doesn't need can be left out.
-- Defining the exact same name + definition twice is a no-op (returns the existing member).
-- Reusing a name for a different definition, or a definition under a different name,
-  raises `ValueError`.
-- Custom collections survive pickling, so they work with multiprocessing.
-
 ## Reference
 
-`DataCollection.define(name, *, api_id, catalog_id, service_url, collection_type, sensor_type, processing_level, swath_mode, polarization, resolution, orbit_direction, bands, metabands, has_cloud_coverage)`
+Each member's value is a frozen `DataCollectionDefinition` with these fields:
 
-| Parameter | Meaning |
+| Field | Meaning |
 |---|---|
 | `api_id` | Identifier used in Process API `input.data[].type` |
 | `catalog_id` | Identifier used in Catalog API searches |
@@ -334,12 +311,9 @@ Sentinel-1 (`collection.is_sentinel1`). `orbit_direction` is sent for any collec
 
 | Method / property | Description |
 |---|---|
-| `DataCollection.define(...)` | Create a new collection |
-| `collection.define_from(name, **params)` | Derive a new collection |
 | `collection.is_sentinel1` | `True` for Sentinel-1 collections |
 | `collection.is_sentinel3` | `True` for Sentinel-3 collections |
 | `collection.is_sentinel5p` | `True` for Sentinel-5P collections |
 | `collection.contains_orbit_direction(direction)` | Whether the collection includes acquisitions in that orbit direction |
-| `DataCollection.get_available_collections()` | List all members, including custom ones |
+| `DataCollection.get_available_collections()` | List all predefined collections |
 | `collection.value` | The underlying `DataCollectionDefinition` |
-| `definition.derive(**params)` | New definition with overridden fields |

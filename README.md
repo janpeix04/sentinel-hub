@@ -36,6 +36,7 @@ Highlights:
 - **Evalscript generator** – build a valid `//VERSION=3` evalscript from a list of band names.
 - **Geometry toolkit** – `BBox`, `Geometry` and `CRS` with reprojection, buffering, partitioning and UTM helpers.
 - **Command line interface** – `sentinel-hub search | process | stats | evalscript | config ...` for the common tasks without writing Python.
+- **MCP server** – `sentinel-hub-mcp` exposes search, processing and statistics to Claude Code and other MCP clients.
 - **Robust downloads** – OAuth2 session handling and caching, automatic retries with back-off, rate-limit handling, multi-threading and on-disk response caching.
 
 ## Installation
@@ -141,7 +142,7 @@ Each topic has its own page in [`docs/`](docs). Pick the one you need:
 | Service | What it covers | Main objects | Docs |
 |---|---|---|---|
 | ⚙️ **Configuration** | CDSE credentials, `config.toml`, env vars, profiles | `SHConfig` | [configuration.md](docs/configuration.md) |
-| 🛰️ **Data Collections** | Predefined collections, bands & metabands, custom collections | `DataCollection`, `Band`, `Unit` | [data-collections.md](docs/data-collections.md) |
+| 🛰️ **Data Collections** | Predefined collections, bands & metabands | `DataCollection`, `Band`, `Unit` | [data-collections.md](docs/data-collections.md) |
 | 🔎 **Catalog API** | STAC search, collections, features, pagination | `SHCatalog`, `CatalogSearchIterator` | [catalog-api.md](docs/catalog-api.md) |
 | 🖼️ **Process API** | Building requests, multiple outputs, saving & caching data | `SHRequest` | [process-api.md](docs/process-api.md) |
 | 📊 **Statistical API** | Statistics, percentiles & histograms per aggregation interval | `SHStatistical`, `LastIntervalBehavior` | [statistical-api.md](docs/statistical-api.md) |
@@ -153,6 +154,7 @@ Each topic has its own page in [`docs/`](docs). Pick the one you need:
 | 💾 **File I/O** | Reading and writing TIFF, PNG, JP2, JSON, CSV, TAR, … | `read_data`, `write_data` | [io-utils.md](docs/io-utils.md) |
 | 🧩 **Constants** | Formats, resampling, mosaicking order, last interval behavior, service URLs | `MimeType`, `ResamplingType`, `MosaickingOrder`, `LastIntervalBehavior`, `ServiceUrl` | [constants.md](docs/constants.md) |
 | 💻 **Command line** | `sentinel-hub` command: config, search, process, stats, evalscripts | `sentinel-hub --help` | [cli.md](docs/cli.md) |
+| 🤖 **MCP server** | Use the package from Claude Code and other MCP clients | `sentinel-hub-mcp` | [mcp.md](docs/mcp.md) |
 | 🚨 **Exceptions & warnings** | Error hierarchy and custom warnings | `DownloadFailedException`, … | [exceptions.md](docs/exceptions.md) |
 
 ## Development
