@@ -1,15 +1,9 @@
-from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any
-
-from aenum import extend_enum
+from dataclasses import dataclass, fields
+from enum import Enum
+from typing import Any
 
 from sentinel_hub.constants import ServiceUrl
 from sentinel_hub.data_collections_bands import Band, Bands, MetaBands
-
-if TYPE_CHECKING:
-    from enum import Enum, EnumMeta
-else:
-    from aenum import Enum, EnumMeta
 
 
 class _CollectionType:
@@ -91,33 +85,9 @@ def _shallow_asdict(dataclass_instance: Any) -> dict[str, Any]:
     }
 
 
-class _DataCollectionMeta(EnumMeta):
-    """Metaclass that builds DataCollection class enums."""
-
-    def __call__(cls, value, *args, **kwargs):  # type: ignore[no-untyped-def]
-        """
-        This is executed whenever `DataCollection('something')` is called.
-
-        This solves a problem of pickling a custom DataCollection and unpickling it in
-        another process.
-        """
-        if (
-            isinstance(value, DataCollectionDefinition)
-            and value not in cls._value2member_map_
-            and value._name
-        ):
-            cls._try_add_data_collection(value._name, value)
-
-        return super().__call__(value, *args, **kwargs)
-
-
 @dataclass(frozen=True)
 class DataCollectionDefinition:
-    """
-    An immutable definition of a data collection.
-
-    Check `DataCollection.define` for more info about attributes of this class.
-    """
+    """An immutable definition of a data collection, used as the value of `DataCollection` members."""
 
     api_id: str | None = None
     catalog_id: str | None = None
@@ -132,8 +102,6 @@ class DataCollectionDefinition:
     bands: tuple[Band, ...] | None = None
     metabands: tuple[Band, ...] | None = None
     has_cloud_coverage: bool = False
-    # The following parameter is used to preserve custom DataCollection name during pickling and unpickling process:
-    _name: str | None = field(default=None, compare=False)
 
     def __post_init__(self):  # type: ignore[no-untyped-def] # not typechecked because we mutate immutable dataclasses
         """
@@ -153,9 +121,7 @@ class DataCollectionDefinition:
             if value is not None
         }
         params_repr = "\n  ".join(
-            f"{name}: {value}"
-            for name, value in valid_params.items()
-            if name != "_name"
+            f"{name}: {value}" for name, value in valid_params.items()
         )
         return f"{self.__class__.__name__}(\n  {params_repr}\n)"
 
@@ -170,14 +136,13 @@ class DataCollectionDefinition:
         return DataCollectionDefinition(**derived_params)
 
 
-class DataCollection(Enum, metaclass=_DataCollectionMeta):
+class DataCollection(Enum):
     """
     An enum class for data collections.
 
-    It contains a number of predefined data collections, which are the most commonly used with
-    Sentinel Hub service. Additionally, it also allows defining new data collections by
-    specifying data collection parameters relevant for the service. Check
-    `DataCollection.define` and similar methods for more.
+    Only the predefined data collections below are supported, new members cannot be added.
+    Filters that are not part of a collection (e.g. a Sentinel-1 acquisition mode or an
+    orbit direction) are passed per request through `other_args`.
     """
 
     SENTINEL2_L1C = DataCollectionDefinition(
@@ -296,90 +261,6 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
         metabands=MetaBands.SENTINEL5P,
     )
 
-    @classmethod
-    def define(
-        cls,
-        name: str,
-        *,
-        api_id: str | None = None,
-        catalog_id: str | None = None,
-        service_url: str | None = None,
-        collection_type: str | None = None,
-        sensor_type: str | None = None,
-        processing_level: str | None = None,
-        swath_mode: str | None = None,
-        polarization: str | None = None,
-        resolution: str | None = None,
-        orbit_direction: str | None = None,
-        bands: tuple[Band, ...] | None = None,
-        metabands: tuple[Band, ...] | None = None,
-        has_cloud_coverage: bool = False,
-    ) -> DataCollection:
-        """
-        Define a new data collection.
-
-        Note that all parameters, except `name` are optional. If a data collection definition
-        won't be used for a certain use case (e.g. Process API, Catalog API), parameters for that
-        use case don't have to be defined.
-        """
-        definition = DataCollectionDefinition(
-            api_id=api_id,
-            catalog_id=catalog_id,
-            service_url=service_url,
-            collection_type=collection_type,
-            sensor_type=sensor_type,
-            processing_level=processing_level,
-            swath_mode=swath_mode,
-            polarization=polarization,
-            resolution=resolution,
-            orbit_direction=orbit_direction,
-            bands=bands,
-            metabands=metabands,
-            has_cloud_coverage=has_cloud_coverage,
-            _name=name,
-        )
-        cls._try_add_data_collection(name, definition)
-        return cls(definition)
-
-    def define_from(self, name: str, **params: Any) -> DataCollection:
-        """Define a new data collection from an existing one."""
-        definition = self.value
-        new_definition = definition.derive(**params, _name=name)
-
-        self._try_add_data_collection(name, new_definition)
-        return DataCollection(new_definition)
-
-    @classmethod
-    def _try_add_data_collection(
-        cls, name: str, definition: DataCollectionDefinition
-    ) -> None:
-        """
-        Tries adding a new data collection definition. If the exact enum has already been
-        defined then it won't do anything. However, if either a name or a definition has
-        already been matched with another name or definition then it will raise an error.
-        """
-        is_name_defined = name in cls.__members__
-        is_enum_defined = is_name_defined and cls.__members__[name].value == definition
-        is_definition_defined = definition in cls._value2member_map_
-
-        if is_enum_defined:
-            return
-
-        if not is_name_defined and not is_definition_defined:
-            extend_enum(cls, name, definition)
-            return
-
-        if is_name_defined:
-            raise ValueError(
-                f"Data collection name `{name}` is already taken by another data collection"
-            )
-
-        existing_collection = cls._value2member_map_[definition]
-        raise ValueError(
-            f"Data collection definition is already taken by {existing_collection}. Two different "
-            "DataCollection enums cannot have the same definition."
-        )
-
     @property
     def api_id(self) -> str:
         """Provides a Sentinel Hub Process API identifier or raises an error if it is not defined."""
@@ -459,5 +340,5 @@ class DataCollection(Enum, metaclass=_DataCollectionMeta):
 
     @classmethod
     def get_available_collections(cls) -> list[DataCollection]:
-        """Returns which data collections are available for configured Sentinel Hub OGC URL."""
+        """Returns all predefined data collections."""
         return list(cls)

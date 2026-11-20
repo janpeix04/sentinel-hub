@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sentinel-hub": {
+      "command": "uv",
+      "args": ["run", "--extra", "mcp", "sentinel-hub-mcp"]
+    }
+  }
+}
