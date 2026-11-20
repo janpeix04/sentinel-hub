@@ -43,7 +43,7 @@ def test_derive(
     [
         ({}, "DataCollectionDefinition(\n  has_cloud_coverage: False\n)"),
         (
-            {"api_id": "X", "_name": "A"},
+            {"api_id": "X"},
             "DataCollectionDefinition(\n  api_id: X\n  has_cloud_coverage: False\n)",
         ),
         (
@@ -59,12 +59,7 @@ def test_collection_repr(definition_input: dict[str, Any], expected: str) -> Non
 @pytest.mark.parametrize(
     ("test_definition", "equal_definition"),
     [
-        ({"api_id": "X", "_name": "A"}, {"api_id": "X", "_name": "A"}),
-        ({"api_id": "X", "_name": "A"}, {"api_id": "X", "_name": "B"}),
-        (
-            {"api_id": "X", "has_cloud_coverage": False},
-            {"api_id": "X", "has_cloud_coverage": False, "_name": "B"},
-        ),
+        ({"api_id": "X"}, {"api_id": "X"}),
         ({"api_id": "X", "has_cloud_coverage": False}, {"api_id": "X"}),
     ],
 )
@@ -79,7 +74,7 @@ def test_collection_definitions_equal(
 @pytest.mark.parametrize(
     ("test_definition", "equal_definition"),
     [
-        ({"api_id": "X", "_name": "A"}, {"api_id": "Y", "_name": "A"}),
+        ({"api_id": "X"}, {"api_id": "Y"}),
         ({"api_id": "X", "has_cloud_coverage": True}, {"api_id": "X"}),
         ({"api_id": "X", "catalog_id": "Y"}, {"api_id": "X"}),
     ],
@@ -99,44 +94,16 @@ def test_list_to_tuple_casting() -> None:
     assert definition.metabands == ("dataMask",)
 
 
-def test_define() -> None:
-    data_collection = DataCollection.define(
-        "NEW", api_id="X", sensor_type="Sensor", bands=("B01",), has_cloud_coverage=True
-    )
-
-    assert data_collection == DataCollection.NEW
-    assert DataCollection.NEW.api_id == "X"
+def test_custom_collections_not_supported() -> None:
+    assert not hasattr(DataCollection, "define")
+    assert not hasattr(DataCollection.SENTINEL2_L2A, "define_from")
 
     with pytest.raises(ValueError):
-        DataCollection.define(
-            "NEW_NEW",
-            api_id="X",
-            sensor_type="Sensor",
-            bands=("B01",),
-            has_cloud_coverage=True,
-        )
-
-    with pytest.raises(ValueError):
-        DataCollection.define("NEW", api_id="Y")
+        DataCollection(DataCollectionDefinition(api_id="byoc-1234"))
 
 
-def test_define_from() -> None:
-    bands = ["B01", "XYZ"]
-    data_collection = DataCollection.define_from(
-        DataCollection.SENTINEL2_L2A, "NEW_S2", api_id="X", bands=bands
-    )
-
-    assert data_collection == DataCollection.NEW_S2
-    assert data_collection.api_id == "X"
-    assert data_collection.catalog_id == DataCollection.SENTINEL2_L2A.catalog_id
-    assert data_collection.bands == tuple(bands)
-
-
-def test_custom_collection_pickling() -> None:
-    data_collection = DataCollection.SENTINEL2_L1C.define_from(
-        "PICKLED_S2", service_url=None
-    )
-
+@pytest.mark.parametrize("data_collection", list(DataCollection))
+def test_pickling(data_collection: DataCollection) -> None:
     assert pickle.loads(pickle.dumps(data_collection)) is data_collection
 
 
@@ -565,42 +532,15 @@ def test_contains_orbit_direction(
     assert data_collection.contains_orbit_direction(orbit_direction) is expected
 
 
-def test_define_sentinel1_variant() -> None:
-    data_collection = DataCollection.SENTINEL1.define_from(
-        "SENTINEL1_SM_VV_ASC",
-        swath_mode="SM",
-        polarization="SV",
-        resolution="HIGH",
-        orbit_direction=OrbitDirection.ASCENDING,
-    )
-
-    assert data_collection.is_sentinel1
-    assert data_collection.swath_mode == "SM"
-    assert data_collection.polarization == "SV"
-    assert data_collection.resolution == "HIGH"
-    assert data_collection.orbit_direction == "ASCENDING"
-    assert data_collection.api_id == "sentinel-1-grd"
-
-
-def test_catalog_id_falls_back_to_api_id() -> None:
-    data_collection = DataCollection.define("ONLY_API_ID", api_id="only-api-id")
-    assert data_collection.catalog_id == "only-api-id"
-
-
-def test_attributes_empty_fail() -> None:
-    data_collection = DataCollection.define("EMPTY")
-
-    for attr_name in ["api_id", "catalog_id", "bands", "metabands"]:
-        with pytest.raises(ValueError):
-            getattr(data_collection, attr_name)
-
-    assert data_collection.service_url is None
+@pytest.mark.parametrize("data_collection", list(DataCollection))
+def test_predefined_collections_complete(data_collection: DataCollection) -> None:
+    assert data_collection.api_id
+    assert data_collection.catalog_id
+    assert data_collection.bands
+    assert data_collection.metabands
+    assert data_collection.service_url
 
 
 def test_get_available_collections() -> None:
-    number_of_collection = len(DataCollection.get_available_collections())
-    DataCollection.define("NEW_NEW", api_id="Z")
-    collections = DataCollection.get_available_collections()
-
-    assert len(collections) == number_of_collection + 1
-    assert all(isinstance(collection, DataCollection) for collection in collections)
+    assert DataCollection.get_available_collections() == list(DataCollection)
+    assert len(DataCollection.get_available_collections()) == 18

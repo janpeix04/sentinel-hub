@@ -696,14 +696,11 @@ def test_input_data_sentinel3(data_collection: DataCollection, api_id: str) -> N
 
 
 def test_input_data_sentinel3_slstr_filters() -> None:
-    slstr_day = DataCollection.SENTINEL3_SLSTR.define_from(
-        "SENTINEL3_SLSTR_DES", orbit_direction="descending"
-    )
     input_data = SHRequest.input_data(
-        data_collection=slstr_day,
+        data_collection=DataCollection.SENTINEL3_SLSTR,
         maxcc=0.2,
         mosaicking_order=MosaickingOrder.LEAST_CC,
-        other_args={"dataFilter": {"view": "OBLIQUE"}},
+        other_args={"dataFilter": {"orbitDirection": "DESCENDING", "view": "OBLIQUE"}},
     )
 
     assert {**input_data} == {
